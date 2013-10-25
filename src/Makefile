@@ -72,11 +72,13 @@ SRC_CHAMELEON = $(wildcard kernel_chameleon_*.c)
 OBJ_CHAMELEON_1P = $(SRC_CHAMELEON:.c=_1p.o)
 OBJ_CHAMELEON_2P = $(SRC_CHAMELEON:.c=_2p.o)
 
-SRC = $(filter-out $(SRC_CHAMELEON), $(wildcard *.c))
+SRC_ARGONAUT = $(wildcard kernel_argonaut_*.c)
+OBJ_ARGONAUT = $(SRC_ARGONAUT:.c=.o)
+
+SRC = $(filter-out $(SRC_CHAMELEON) $(SRC_ARGONAUT), $(wildcard *.c))
 OBJ = $(SRC:.c=.o)
 
-#$(OBJ_ARGONAUT_POST_PROCESSING) $(OBJ_BLOCKS)
-ALL_OBJ = $(OBJ_CHAMELEON_1P) $(OBJ_CHAMELEON_2P) $(OBJ)
+ALL_OBJ = $(OBJ_CHAMELEON_1P) $(OBJ_CHAMELEON_2P) $(OBJ_ARGONAUT) $(OBJ)
 
 .PHONY: header footer kernels blocks
 

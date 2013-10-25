@@ -30,31 +30,33 @@
  * 25/10/13 23:02
  */
 
-#ifndef SHARC_ARGONAUT_H
-#define SHARC_ARGONAUT_H
+#ifndef SSC_ARGONAUT_H
+#define SSC_ARGONAUT_H
 
 #include <stdint.h>
 
-//#ifdef SHARC_ARGONAUT_POST_PROCESSING
-#define SHARC_ARGONAUT_SUFFIX                                      post_processing
-#define SHARC_ARGONAUT_ENCODE_PROCESS_LETTERS
+#include "globals.h"
+
+//#ifdef SSC_ARGONAUT_POST_PROCESSING
+//#define SSC_ARGONAUT_SUFFIX                                      post_processing
+#define SSC_ARGONAUT_ENCODE_PROCESS_LETTERS
 //#else
 //#define SSC_ARGONAUT_SUFFIX                                      default
 //#endif
 
-#define PASTER(x,y) x ## _ ## y
-#define EVALUATOR(x,y)  PASTER(x,y)
-#define ARGONAUT_NAME(function) EVALUATOR(function, SHARC_ARGONAUT_SUFFIX)
+//#define PASTER(x,y) x ## _ ## y
+//#define EVALUATOR(x,y)  PASTER(x,y)
+//#define ARGONAUT_NAME(function) EVALUATOR(function, SSC_ARGONAUT_SUFFIX)
 
-#define SHARC_ARGONAUT_HASH_BITS                            16
-#define SHARC_ARGONAUT_HASH_OFFSET_BASIS                    (uint32_t)(2885564586)
-#define SHARC_ARGONAUT_HASH_PRIME                           16777619
+//#define SSC_ARGONAUT_HASH_BITS                            16
+//#define SSC_ARGONAUT_HASH_OFFSET_BASIS                    (uint32_t)(2885564586)
+//#define SSC_ARGONAUT_HASH_PRIME                           16777619
 
 //typedef uint64_t                                            ssc_hash_signature;
 
 typedef struct {
     uint_fast32_t code;
     uint_fast8_t bitSize;
-} sharc_argonaut_huffman_code;
+} ssc_argonaut_huffman_code;
 
 #endif

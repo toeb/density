@@ -42,6 +42,7 @@
 #include "block_mode_marker.h"
 #include "block_encode.h"
 #include "kernel_chameleon_encode.h"
+#include "kernel_argonaut_encode.h"
 
 typedef enum {
     SSC_ENCODE_STATE_READY = 0,

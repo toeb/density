@@ -77,6 +77,10 @@ SSC_FORCE_INLINE SSC_ENCODE_STATE ssc_encode_init(ssc_byte_buffer *restrict out,
             ssc_block_encode_init(&state->blockEncodeStateA, SSC_BLOCK_MODE_KERNEL, SSC_BLOCK_TYPE_NO_HASHSUM_INTEGRITY_CHECK, malloc(sizeof(ssc_chameleon_encode_state)), (void*)ssc_chameleon_encode_init_1p, (void*)ssc_chameleon_encode_process_1p, (void*)ssc_chameleon_encode_finish_1p);
             ssc_block_encode_init(&state->blockEncodeStateB, SSC_BLOCK_MODE_KERNEL, blockType, malloc(sizeof(ssc_chameleon_encode_state)), (void*)ssc_chameleon_encode_init_2p, (void*)ssc_chameleon_encode_process_2p, (void*)ssc_chameleon_encode_finish_2p);
             break;
+
+        case SSC_COMPRESSION_MODE_ARGONAUT:
+            ssc_block_encode_init(&state->blockEncodeStateA, SSC_BLOCK_MODE_KERNEL, blockType, malloc(sizeof(ssc_argonaut_encode_state)), (void*)ssc_argonaut_encode_init, (void*)ssc_argonaut_encode_process, (void*)ssc_argonaut_encode_finish);
+            break;
     }
 
     state->workBuffer = workBuffer;
@@ -106,6 +110,7 @@ SSC_FORCE_INLINE SSC_ENCODE_STATE ssc_encode_process(ssc_byte_buffer *restrict i
                 switch (state->compressionMode) {
                     case SSC_COMPRESSION_MODE_COPY:
                     case SSC_COMPRESSION_MODE_CHAMELEON:
+                    case SSC_COMPRESSION_MODE_ARGONAUT:
                         blockEncodeState = ssc_block_encode_process(in, out, &state->blockEncodeStateA, flush);
                         ssc_encode_update_totals(in, out, state, inPositionBefore, outPositionBefore);
 
