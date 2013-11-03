@@ -42,7 +42,6 @@
 #define SSC_ARGONAUT_DICTIONARY_PRIMARY_RANKS                                             (256)
 #define SSC_ARGONAUT_DICTIONARY_SECONDARY_RANKS                                           (256)
 #define SSC_ARGONAUT_DICTIONARY_MAX_WORD_LETTERS                                          8
-//#define SSC_ARGONAUT_DICTIONARY_TERTIARY_RANKS                                            (65536)
 
 #pragma pack(push)
 #pragma pack(4)
@@ -53,34 +52,16 @@ struct ssc_argonaut_dictionary_primary_entry {
     uint_fast8_t ranking;
 };
 
-/*typedef struct ssc_argonaut_dictionary_tertiary_entry ssc_argonaut_dictionary_tertiary_entry;
-struct ssc_argonaut_dictionary_tertiary_entry {
-    uint_fast16_t diword;
-    uint_fast32_t durability;
-    uint_fast16_t ranking;
-};*/
-
 typedef struct {
     union {
         uint64_t as_uint64_t;
-        //uint16_t as_uint16_t;
         uint8_t letters[SSC_ARGONAUT_DICTIONARY_MAX_WORD_LETTERS];
     };
-    //uint_fast8_t length; // todo
-    //const ssc_argonaut_huffman_code* letterCode[SSC_ARGONAUT_DICTIONARY_MAX_WORD_LETTERS];
 } ssc_argonaut_dictionary_word;
 
 typedef struct {
     ssc_argonaut_huffman_code code [SSC_ARGONAUT_DICTIONARY_PRIMARY_RANKS];
 } ssc_argonaut_primary_code_lookup;
-
-typedef struct {
-    ssc_argonaut_huffman_code code [SSC_ARGONAUT_DICTIONARY_PRIMARY_RANKS * SSC_ARGONAUT_DICTIONARY_PRIMARY_RANKS];
-} ssc_argonaut_secondary_code_lookup;
-
-/*typedef struct {
-    ssc_argonaut_huffman_code code [SSC_ARGONAUT_DICTIONARY_SECONDARY_RANKS];
-} ssc_argonaut_secondary_code_lookup;*/
 
 typedef struct {
     ssc_argonaut_dictionary_word word;
@@ -92,14 +73,12 @@ typedef struct {
 typedef struct {
     ssc_argonaut_dictionary_primary_entry *primary[SSC_ARGONAUT_DICTIONARY_PRIMARY_RANKS];
     ssc_argonaut_dictionary_secondary_entry *secondary[SSC_ARGONAUT_DICTIONARY_SECONDARY_RANKS];
-    //ssc_argonaut_dictionary_tertiary_entry *tertiary[SSC_ARGONAUT_DICTIONARY_TERTIARY_RANKS];
 } ssc_argonaut_dictionary_ranking;
 
 typedef struct {
     ssc_argonaut_dictionary_ranking ranking;
     ssc_argonaut_dictionary_primary_entry primary_entry[1 << 8];
     ssc_argonaut_dictionary_secondary_entry secondary_entry[1 << 16];
-    //ssc_argonaut_dictionary_tertiary_entry tertiary_entry[1 << 16];
 } ssc_argonaut_dictionary;
 #pragma pack(pop)
 
