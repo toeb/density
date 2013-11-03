@@ -32,9 +32,11 @@
 
 #include "main_encode.h"
 
-SSC_FORCE_INLINE SSC_ENCODE_STATE ssc_encode_write_header(ssc_byte_buffer *restrict out, ssc_encode_state *restrict state) {
+SSC_FORCE_INLINE SSC_ENCODE_STATE ssc_encode_write_header(ssc_byte_buffer *restrict out, ssc_encode_state *restrict state, const SSC_COMPRESSION_MODE compressionMode, const SSC_BLOCK_TYPE blockType) {
     if (out->position + sizeof(ssc_main_header) > out->size)
         return SSC_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
+
+    state->totalWritten += ssc_main_header_write(out, compressionMode, blockType);
 
     state->process = SSC_ENCODE_PROCESS_WRITE_BLOCKS;
 
@@ -70,12 +72,12 @@ SSC_FORCE_INLINE SSC_ENCODE_STATE ssc_encode_init(ssc_byte_buffer *restrict out,
             break;
 
         case SSC_COMPRESSION_MODE_CHAMELEON:
-            ssc_block_encode_init(&state->blockEncodeStateA, SSC_BLOCK_MODE_KERNEL, blockType, malloc(sizeof(ssc_chameleon_encode_state)), (void*)ssc_chameleon_encode_init_1p, (void*)ssc_chameleon_encode_process_1p, (void*)ssc_chameleon_encode_finish_1p);
+            ssc_block_encode_init(&state->blockEncodeStateA, SSC_BLOCK_MODE_KERNEL, blockType, malloc(sizeof(ssc_chameleon_encode_state)), (void *) ssc_chameleon_encode_init_1p, (void *) ssc_chameleon_encode_process_1p, (void *) ssc_chameleon_encode_finish_1p);
             break;
 
         case SSC_COMPRESSION_MODE_DUAL_PASS_CHAMELEON:
-            ssc_block_encode_init(&state->blockEncodeStateA, SSC_BLOCK_MODE_KERNEL, SSC_BLOCK_TYPE_NO_HASHSUM_INTEGRITY_CHECK, malloc(sizeof(ssc_chameleon_encode_state)), (void*)ssc_chameleon_encode_init_1p, (void*)ssc_chameleon_encode_process_1p, (void*)ssc_chameleon_encode_finish_1p);
-            ssc_block_encode_init(&state->blockEncodeStateB, SSC_BLOCK_MODE_KERNEL, blockType, malloc(sizeof(ssc_chameleon_encode_state)), (void*)ssc_chameleon_encode_init_2p, (void*)ssc_chameleon_encode_process_2p, (void*)ssc_chameleon_encode_finish_2p);
+            ssc_block_encode_init(&state->blockEncodeStateA, SSC_BLOCK_MODE_KERNEL, SSC_BLOCK_TYPE_NO_HASHSUM_INTEGRITY_CHECK, malloc(sizeof(ssc_chameleon_encode_state)), (void *) ssc_chameleon_encode_init_1p, (void *) ssc_chameleon_encode_process_1p, (void *) ssc_chameleon_encode_finish_1p);
+            ssc_block_encode_init(&state->blockEncodeStateB, SSC_BLOCK_MODE_KERNEL, blockType, malloc(sizeof(ssc_chameleon_encode_state)), (void *) ssc_chameleon_encode_init_2p, (void *) ssc_chameleon_encode_process_2p, (void *) ssc_chameleon_encode_finish_2p);
             break;
 
         case SSC_COMPRESSION_MODE_ARGONAUT:
@@ -92,7 +94,7 @@ SSC_FORCE_INLINE SSC_ENCODE_STATE ssc_encode_init(ssc_byte_buffer *restrict out,
             state->process = SSC_ENCODE_PROCESS_WRITE_BLOCKS;
             return SSC_ENCODE_STATE_READY;
         default:
-            return ssc_encode_write_header(out, state);
+            return ssc_encode_write_header(out, state, mode, blockType);
     }
 }
 
@@ -178,7 +180,7 @@ SSC_FORCE_INLINE SSC_ENCODE_STATE ssc_encode_process(ssc_byte_buffer *restrict i
                 }
 
                 if (state->workBuffer->size & ~0x1F)
-                    memcpy(state->workBuffer->pointer, state->workBuffer->pointer + (state->workBuffer->size & ~0x1F), (size_t) state->workBufferData.outstandingBytes);
+                memcpy(state->workBuffer->pointer, state->workBuffer->pointer + (state->workBuffer->size & ~0x1F), (size_t) state->workBufferData.outstandingBytes);
                 state->workBuffer->position = state->workBufferData.outstandingBytes;
 
                 state->process = SSC_ENCODE_PROCESS_WRITE_BLOCKS_IN_TO_WORKBUFFER;
@@ -194,11 +196,18 @@ SSC_FORCE_INLINE SSC_ENCODE_STATE ssc_encode_finish(ssc_byte_buffer *restrict ou
     if (state->process ^ SSC_ENCODE_PROCESS_WRITE_FOOTER)
         return SSC_ENCODE_STATE_ERROR;
 
-    ssc_block_encode_finish(&state->blockEncodeStateA);
-    free(state->blockEncodeStateA.kernelEncodeState);
-    if (state->compressionMode == SSC_COMPRESSION_MODE_DUAL_PASS_CHAMELEON) {
-        ssc_block_encode_finish(&state->blockEncodeStateB);
-        free(state->blockEncodeStateB.kernelEncodeState);
+    switch (state->compressionMode) {
+        case SSC_COMPRESSION_MODE_CHAMELEON:
+            ssc_block_encode_finish(&state->blockEncodeStateA);
+            free(state->blockEncodeStateA.kernelEncodeState);
+
+        case SSC_COMPRESSION_MODE_DUAL_PASS_CHAMELEON:
+            ssc_block_encode_finish(&state->blockEncodeStateB);
+            free(state->blockEncodeStateB.kernelEncodeState);
+            break;
+
+        default:
+            break;
     }
 
     return ssc_encode_write_footer(out, state);

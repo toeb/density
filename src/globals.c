@@ -27,18 +27,19 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * 11/10/13 12:54
+ * 01/11/13 13:39
  */
 
-#ifndef SSC_BYTE_BUFFER_H
-#define SSC_BYTE_BUFFER_H
-
 #include "globals.h"
-#include "ssc_api.h"
 
-#define SSC_PREFERRED_BUFFER_SIZE             (1 << 19)
+uint8_t ssc_version_major() {
+    return SSC_MAJOR_VERSION;
+}
 
-void ssc_byte_buffer_encapsulate(ssc_byte_buffer *, ssc_byte*, const uint_fast64_t);
-void ssc_byte_buffer_rewind(ssc_byte_buffer *);
+uint8_t ssc_version_minor() {
+    return SSC_MINOR_VERSION;
+}
 
-#endif
+uint8_t ssc_version_revision() {
+    return SSC_REVISION;
+}

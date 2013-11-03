@@ -43,10 +43,18 @@ TARGET = libssc
 CFLAGS = -std=c99 -fPIC
 
 ifeq ($(OS),Windows_NT)
-    EXTENSION = .dll
+    DYN_EXT = .dll
+    STAT_EXT = .lib
     ARROW = ^-^>
 else
-    EXTENSION = .so
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        DYN_EXT = .so
+    endif
+    ifeq ($(UNAME_S),Darwin)
+        DYN_EXT = .dylib
+    endif
+    STAT_EXT = .a
     ARROW = \-\>
 endif
 
@@ -80,9 +88,9 @@ OBJ = $(SRC:.c=.o)
 
 ALL_OBJ = $(OBJ_CHAMELEON_1P) $(OBJ_CHAMELEON_2P) $(OBJ_ARGONAUT) $(OBJ)
 
-.PHONY: header footer kernels blocks
+.PHONY: header footer
 
-all: header $(TARGET)$(EXTENSION) footer
+all: header $(TARGET)$(DYN_EXT) footer
 
 header:
 	@echo ${bold}Compiling${normal} ...
@@ -91,11 +99,14 @@ footer:
 	@echo Build completed successfully.
 	@echo
 
-$(TARGET)$(EXTENSION): $(ALL_OBJ)
+$(TARGET)$(DYN_EXT): $(ALL_OBJ)
 	@echo
 	@echo ${bold}Linking${normal} ...
-	@echo $^ $(ARROW) ${bold}$(TARGET)$(EXTENSION)${normal}
-	$(CC) -shared -Wl -o $(TARGET)$(EXTENSION) $^ $(CFLAGS)
+	@echo $^ $(ARROW) ${bold}$(TARGET)$(DYN_EXT)${normal}
+	$(CC) -shared -o $(TARGET)$(DYN_EXT) $^ $(CFLAGS)
+	@echo $^ $(ARROW) ${bold}$(TARGET)$(STAT_EXT)${normal}
+	@ar r $(TARGET)$(STAT_EXT) $^
+	@ranlib $(TARGET)$(STAT_EXT)
 
 %_1p.o: %.c
 	@echo $^ $(ARROW) $@
@@ -112,6 +123,6 @@ $(TARGET)$(EXTENSION): $(ALL_OBJ)
 clean:
 	@echo ${bold}Cleaning build directories${normal} ...
 	@rm -f $(ALL_OBJ)
-	@rm -f $(TARGET)$(EXTENSION)
+	@rm -f $(TARGET)$(DYN_EXT)
 	@echo Done.
 	@echo
