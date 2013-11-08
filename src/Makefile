@@ -76,17 +76,10 @@ endif
 
 CC = @$(PREFIX)cc
 
-SRC_CHAMELEON = $(wildcard kernel_chameleon_*.c)
-OBJ_CHAMELEON_1P = $(SRC_CHAMELEON:.c=_1p.o)
-OBJ_CHAMELEON_2P = $(SRC_CHAMELEON:.c=_2p.o)
-
-SRC_ARGONAUT = $(wildcard kernel_argonaut_*.c)
-OBJ_ARGONAUT = $(SRC_ARGONAUT:.c=.o)
-
-SRC = $(filter-out $(SRC_CHAMELEON) $(SRC_ARGONAUT), $(wildcard *.c))
+SRC = $(wildcard *.c)
 OBJ = $(SRC:.c=.o)
 
-ALL_OBJ = $(OBJ_CHAMELEON_1P) $(OBJ_CHAMELEON_2P) $(OBJ_ARGONAUT) $(OBJ)
+ALL_OBJ = $(OBJ)
 
 .PHONY: compile-header compile link-header link
 
@@ -102,7 +95,7 @@ compile: compile-header $(ALL_OBJ)
 	@echo Done.
 	@echo
 
-link: link-header $(TARGET)$(STAT_EXT) $(TARGET)$(DYN_EXT)
+link: compile link-header $(TARGET)$(STAT_EXT) $(TARGET)$(DYN_EXT)
 	@echo Done.
 	@echo
 
@@ -114,14 +107,6 @@ $(TARGET)$(STAT_EXT): $(ALL_OBJ)
 	@echo $^ $(ARROW) ${bold}$(TARGET)$(STAT_EXT)${normal}
 	@ar r $(TARGET)$(STAT_EXT) $^
 	@ranlib $(TARGET)$(STAT_EXT)
-
-%_1p.o: %.c
-	@echo $^ $(ARROW) $@
-	$(CC) -c $(CFLAGS) -DSSC_CHAMELEON_1P $< -o $@
-
-%_2p.o: %.c
-	@echo $^ $(ARROW) $@
-	$(CC) -c $(CFLAGS) -DSSC_CHAMELEON_2P $< -o $@
 
 %.o: %.c
 	@echo $^ $(ARROW) $@
