@@ -27,27 +27,19 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * 25/10/13 23:02
+ * 08/11/13 23:17
  */
 
-#ifndef SSC_ARGONAUT_H
-#define SSC_ARGONAUT_H
+#include "kernel_argonaut_decode.h"
 
-#include <stdint.h>
+SSC_KERNEL_DECODE_STATE ssc_argonaut_decode_init(ssc_argonaut_decode_state *state) {
+    return SSC_KERNEL_DECODE_STATE_READY;
+}
 
-#include "globals.h"
+SSC_KERNEL_DECODE_STATE ssc_argonaut_decode_process(ssc_byte_buffer *in, ssc_byte_buffer *out, ssc_argonaut_decode_state *state, const ssc_bool flush) {
+    return SSC_KERNEL_DECODE_STATE_READY;
+}
 
-typedef struct {
-    uint_fast32_t code;
-    uint_fast8_t bitSize;
-} ssc_argonaut_huffman_code;
-
-typedef enum {
-    SSC_ARGONAUT_ENTITY_SEPARATOR = 0,
-    SSC_ARGONAUT_ENTITY_PLAIN_WORD = 1,
-    SSC_ARGONAUT_ENTITY_WORD_RANK = 2,
-    SSC_ARGONAUT_ENTITY_WORD_HASH = 3,
-    SSC_ARGONAUT_ENTITY_COUNT
-} SSC_ARGONAUT_ENTITY;
-
-#endif
+SSC_KERNEL_DECODE_STATE ssc_argonaut_decode_finish(ssc_argonaut_decode_state * state) {
+    return SSC_KERNEL_DECODE_STATE_READY;
+}

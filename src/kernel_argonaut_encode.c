@@ -32,16 +32,14 @@
 
 #include "kernel_argonaut_encode.h"
 
-#define BLOCK   512
-
-const ssc_argonaut_primary_code_lookup hl = {.code = SSC_ARGONAUT_PRIMARY_HUFFMAN_CODES};
+const ssc_argonaut_primary_code_lookup ssc_argonaut_letter_coding = {.code = SSC_ARGONAUT_PRIMARY_HUFFMAN_CODES};
 
 SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_argonaut_encode_prepare_new_block(ssc_byte_buffer *restrict out, ssc_argonaut_encode_state *restrict state, const uint_fast32_t minimumLookahead) {
     out->position += (state->shift >> 3);
     state->shift &= 0x7llu;
     if (out->position + minimumLookahead > out->size)
         return SSC_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
-    state->count = BLOCK;
+    state->count = SSC_ARGONAUT_BLOCK;
 
     return SSC_KERNEL_ENCODE_STATE_READY;
 }
@@ -118,64 +116,64 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_argonaut_encode_process_word(ssc_by
     if (wordLength ^ SSC_ARGONAUT_DICTIONARY_MAX_WORD_LETTERS)
         state->word.as_uint64_t &= ((((uint64_t) 1) << (wordLength << 3)) - 1);
 
-    uint_fast64_t h = 14695981039346656037llu;
-    h ^= state->word.as_uint64_t;
-    h *= 1099511628211llu;
-    uint_fast32_t xorfold = (uint_fast32_t) ((h >> 32) ^ h);
-    uint_fast16_t shash = (uint_fast16_t) ((xorfold >> 16) ^ xorfold);
+    uint_fast64_t hash64 = 14695981039346656037llu;
+    hash64 ^= state->word.as_uint64_t;
+    hash64 *= 1099511628211llu;
+    uint_fast32_t xorfold32 = (uint_fast32_t) ((hash64 >> 32) ^ hash64);
+    uint_fast16_t hash16 = (uint_fast16_t) ((xorfold32 >> 16) ^ xorfold32);
 
-    ssc_argonaut_dictionary_secondary_entry *match = &state->dictionary.secondary_entry[shash];
+    ssc_argonaut_dictionary_secondary_entry *match = &state->dictionary.secondary_entry[hash16];
     if (state->word.as_uint64_t != match->word.as_uint64_t) {
         if (match->durability)
             match->durability--;
         else {
             match->word.as_uint64_t = state->word.as_uint64_t;
         }
-        ssc_argonaut_encode_write_to_output(out, state, 0x1, 2);
+        ssc_argonaut_encode_write_to_output(out, state, SSC_ARGONAUT_ENTITY_PLAIN_WORD, 2);
         ssc_argonaut_encode_write_to_output(out, state, wordLength, 3);
 
         for (uint_fast8_t i = 0; i != wordLength; i ++) {
             *letter = state->word.letters[i];
-            ssc_argonaut_dictionary_primary_entry *m = &state->dictionary.primary_entry[*letter];
+            ssc_argonaut_dictionary_primary_entry *letterMatch = &state->dictionary.primary_entry[*letter];
 
-            const uint_fast8_t rk = m->ranking;
+            const uint_fast8_t rank = letterMatch->ranking;
 
-            const ssc_argonaut_huffman_code *huffmanCode = &hl.code[rk];
-            ssc_argonaut_encode_write_to_output(out, state, /*(uint32_t)*/huffmanCode->code, huffmanCode->bitSize);
+            const ssc_argonaut_huffman_code *huffmanCode = &ssc_argonaut_letter_coding.code[rank];
+            ssc_argonaut_encode_write_to_output(out, state, huffmanCode->code, huffmanCode->bitSize);
 
-            m->durability++;
-            if (ssc_likely(rk)) {
-                const uint8_t pr = m->ranking - 1;
-                ssc_argonaut_dictionary_primary_entry *pm = state->dictionary.ranking.primary[pr];
-                if (ssc_unlikely(pm->durability < m->durability)) { // todo unlikely after a while
-                    state->dictionary.ranking.primary[pr] = m;
-                    state->dictionary.ranking.primary[rk] = pm;
-                    m->ranking -= 1;
-                    pm->ranking += 1;
+            letterMatch->durability++;
+            if (ssc_likely(rank)) {
+                const uint8_t precedingRank = letterMatch->ranking - 1;
+                ssc_argonaut_dictionary_primary_entry *precedingRankLetter = state->dictionary.ranking.primary[precedingRank];
+                if (ssc_unlikely(precedingRankLetter->durability < letterMatch->durability)) { // todo unlikely after a while
+                    state->dictionary.ranking.primary[precedingRank] = letterMatch;
+                    state->dictionary.ranking.primary[rank] = precedingRankLetter;
+                    letterMatch->ranking -= 1;
+                    precedingRankLetter->ranking += 1;
                 }
             }
         }
         *separator = state->dictionary.ranking.primary[0]->letter;
     } else {
         if (match->ranked) {
-            const uint_fast8_t rk = match->ranking;
-            ssc_argonaut_encode_write_to_output(out, state, 0x2, 2);
-            ssc_argonaut_encode_write_to_output(out, state, rk, 8);
+            const uint_fast8_t rank = match->ranking;
+            ssc_argonaut_encode_write_to_output(out, state, SSC_ARGONAUT_ENTITY_WORD_RANK, 2);
+            ssc_argonaut_encode_write_to_output(out, state, rank, 8);
             match->durability++;
-            if (rk) {
-                const uint16_t preceding = rk - 1;
+            if (rank) {
+                const uint16_t preceding = rank - 1;
                 ssc_argonaut_dictionary_secondary_entry *preceding_match = state->dictionary.ranking.secondary[preceding];
                 if (preceding_match->durability < match->durability) {
                     state->dictionary.ranking.secondary[preceding] = match;
-                    state->dictionary.ranking.secondary[rk] = preceding_match;
+                    state->dictionary.ranking.secondary[rank] = preceding_match;
                     match->ranking -= 1;
                     preceding_match->ranking += 1;
                 }
             }
 
         } else {
-            ssc_argonaut_encode_write_to_output(out, state, 0x3, 2);
-            ssc_argonaut_encode_write_to_output(out, state, shash, 16);
+            ssc_argonaut_encode_write_to_output(out, state, SSC_ARGONAUT_ENTITY_WORD_HASH, 2);
+            ssc_argonaut_encode_write_to_output(out, state, hash16, 16);
             match->durability++;
             const uint16_t preceding = SSC_ARGONAUT_DICTIONARY_SECONDARY_RANKS - 1;
             ssc_argonaut_dictionary_secondary_entry *preceding_match = state->dictionary.ranking.secondary[preceding];
@@ -231,7 +229,7 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_argonaut_encode_process(ssc_byte_bu
     switch (state->process) {
         case SSC_ARGONAUT_ENCODE_PROCESS_CHECK_OUTPUT_MEMORY:
         check_mem:
-            if ((returnState = ssc_argonaut_encode_prepare_new_block(out, state, BLOCK * 32)))
+            if ((returnState = ssc_argonaut_encode_prepare_new_block(out, state, SSC_ARGONAUT_BLOCK * 32)))
                 return returnState;
             state->process = SSC_ARGONAUT_ENCODE_PROCESS_GOTO_NEXT_WORD;
 

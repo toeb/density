@@ -47,20 +47,14 @@
 #define ssc_argonaut_contains_zero(search64) (((search64) - 0x0101010101010101llu) & ~(search64) & 0x8080808080808080llu)
 #define ssc_argonaut_contains_value(search64, value8) (ssc_argonaut_contains_zero((search64) ^ (~0llu / 255 * (value8))))
 
+#define SSC_ARGONAUT_BLOCK   512
+
 typedef enum {
     SSC_ARGONAUT_ENCODE_PROCESS_CHECK_OUTPUT_MEMORY,
     SSC_ARGONAUT_ENCODE_PROCESS_GOTO_NEXT_WORD,
     SSC_ARGONAUT_ENCODE_PROCESS_WORD,
     SSC_ARGONAUT_ENCODE_PROCESS_FINISH
 } SSC_ARGONAUT_ENCODE_PROCESS;
-
-typedef enum {
-    SSC_ARGONAUT_ENTITY_SEPARATOR = 0,
-    SSC_ARGONAUT_ENTITY_RANKED_KEY = 1,
-    SSC_ARGONAUT_ENTITY_WORD = 2,
-    SSC_ARGONAUT_ENTITY_KEY = 3,
-    SSC_ARGONAUT_ENTITY_COUNT
-} SSC_ARGONAUT_ENTITY;
 
 typedef struct {
     union {

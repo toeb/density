@@ -27,27 +27,13 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * 25/10/13 23:02
+ * 08/11/13 16:21
  */
 
-#ifndef SSC_ARGONAUT_H
-#define SSC_ARGONAUT_H
+#include "kernel_argonaut_dictionary.h"
 
-#include <stdint.h>
+const ssc_argonaut_dictionary ssc_argonaut_dictionary_basis = {.primary_entry = 0, .secondary_entry = 0}; // todo ranking
 
-#include "globals.h"
-
-typedef struct {
-    uint_fast32_t code;
-    uint_fast8_t bitSize;
-} ssc_argonaut_huffman_code;
-
-typedef enum {
-    SSC_ARGONAUT_ENTITY_SEPARATOR = 0,
-    SSC_ARGONAUT_ENTITY_PLAIN_WORD = 1,
-    SSC_ARGONAUT_ENTITY_WORD_RANK = 2,
-    SSC_ARGONAUT_ENTITY_WORD_HASH = 3,
-    SSC_ARGONAUT_ENTITY_COUNT
-} SSC_ARGONAUT_ENTITY;
-
-#endif
+SSC_FORCE_INLINE void ssc_argonaut_dictionary_reset(ssc_argonaut_dictionary * dictionary) {
+    memcpy(dictionary, &ssc_argonaut_dictionary_basis, sizeof(ssc_argonaut_dictionary));
+}
