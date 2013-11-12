@@ -37,3 +37,7 @@ const ssc_argonaut_dictionary ssc_argonaut_dictionary_basis = {.primary_entry = 
 SSC_FORCE_INLINE void ssc_argonaut_dictionary_reset(ssc_argonaut_dictionary * dictionary) {
     memcpy(dictionary, &ssc_argonaut_dictionary_basis, sizeof(ssc_argonaut_dictionary));
 }
+
+SSC_FORCE_INLINE void ssc_argonaut_prepare_primary_reverse_lookup() {
+    // todo reverse lookup
+}

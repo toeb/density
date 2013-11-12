@@ -32,7 +32,7 @@
 
 #include "kernel_argonaut_encode.h"
 
-const ssc_argonaut_primary_code_lookup ssc_argonaut_letter_coding = {.code = SSC_ARGONAUT_PRIMARY_HUFFMAN_CODES};
+//const ssc_argonaut_primary_code_lookup ssc_argonaut_letter_coding = {.code = SSC_ARGONAUT_PRIMARY_HUFFMAN_CODES};
 
 SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_argonaut_encode_prepare_new_block(ssc_byte_buffer *restrict out, ssc_argonaut_encode_state *restrict state, const uint_fast32_t minimumLookahead) {
     out->position += (state->shift >> 3);
@@ -138,7 +138,7 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_argonaut_encode_process_word(ssc_by
 
             const uint_fast8_t rank = letterMatch->ranking;
 
-            const ssc_argonaut_huffman_code *huffmanCode = &ssc_argonaut_letter_coding.code[rank];
+            const ssc_argonaut_huffman_code *huffmanCode = &ssc_argonaut_primary_huffman_codes[rank];
             ssc_argonaut_encode_write_to_output(out, state, huffmanCode->code, huffmanCode->bitSize);
 
             letterMatch->durability++;
@@ -170,7 +170,6 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_argonaut_encode_process_word(ssc_by
                     preceding_match->ranking += 1;
                 }
             }
-
         } else {
             ssc_argonaut_encode_write_to_output(out, state, SSC_ARGONAUT_ENTITY_WORD_HASH, 2);
             ssc_argonaut_encode_write_to_output(out, state, hash16, 16);
