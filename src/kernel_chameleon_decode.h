@@ -30,8 +30,8 @@
  * 24/10/13 12:27
  */
 
-#ifndef SSC_HASH_DECODE_H
-#define SSC_HASH_DECODE_H
+#ifndef SSC_CHAMELEON_DECODE_H
+#define SSC_CHAMELEON_DECODE_H
 
 #include "byte_buffer.h"
 #include "kernel_chameleon_dictionary.h"
@@ -39,8 +39,8 @@
 #include "block.h"
 #include "kernel_decode.h"
 
-#define SSC_HASH_DECODE_MINIMUM_INPUT_LOOKAHEAD               (sizeof(ssc_hash_signature) + sizeof(uint32_t) * 8 * sizeof(ssc_hash_signature))
-#define SSC_HASH_DECODE_MINIMUM_OUTPUT_LOOKAHEAD              (sizeof(uint32_t) * 8 * sizeof(ssc_hash_signature))
+#define SSC_CHAMELEON_DECODE_MINIMUM_INPUT_LOOKAHEAD               (sizeof(ssc_hash_signature) + sizeof(uint32_t) * 8 * sizeof(ssc_hash_signature))
+#define SSC_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD              (sizeof(uint32_t) * 8 * sizeof(ssc_hash_signature))
 
 typedef enum {
     SSC_CHAMELEON_DECODE_PROCESS_SIGNATURES_AND_DATA_FAST,
@@ -76,7 +76,7 @@ typedef struct {
     uint_fast64_t signatureBytes;
     uint_fast64_t uncompressedChunkBytes;
 
-    ssc_dictionary dictionary;
+    ssc_chameleon_dictionary dictionary;
 } ssc_chameleon_decode_state;
 #pragma pack(pop)
 

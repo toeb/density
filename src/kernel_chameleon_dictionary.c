@@ -32,8 +32,8 @@
 
 #include "kernel_chameleon_dictionary.h"
 
-const ssc_dictionary ssc_dictionary_empty = {0};
+const ssc_chameleon_dictionary ssc_chameleon_dictionary_empty = {0};
 
-SSC_FORCE_INLINE void ssc_dictionary_reset(ssc_dictionary * dictionary) {
-    memcpy(dictionary, &ssc_dictionary_empty, sizeof(ssc_dictionary));
+SSC_FORCE_INLINE void ssc_chameleon_dictionary_reset(ssc_chameleon_dictionary *dictionary) {
+    memcpy(dictionary, &ssc_chameleon_dictionary_empty, sizeof(ssc_chameleon_dictionary));
 }

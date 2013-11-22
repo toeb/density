@@ -47,7 +47,7 @@ SSC_FORCE_INLINE SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_check_signatures_c
             if (state->resetCycle)
                 state->resetCycle--;
             else {
-                ssc_dictionary_reset(&state->dictionary);
+                ssc_chameleon_dictionary_reset(&state->dictionary);
                 state->resetCycle = SSC_DICTIONARY_PREFERRED_RESET_CYCLE - 1;
             }
 
@@ -189,7 +189,7 @@ SSC_FORCE_INLINE ssc_bool ssc_chameleon_decode_attempt_copy(ssc_byte_buffer *res
 SSC_FORCE_INLINE SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_init(ssc_chameleon_decode_state *state, const uint_fast32_t endDataOverhead) {
     state->signaturesCount = 0;
     state->efficiencyChecked = 0;
-    ssc_dictionary_reset(&state->dictionary);
+    ssc_chameleon_dictionary_reset(&state->dictionary);
     state->resetCycle = SSC_DICTIONARY_PREFERRED_RESET_CYCLE - 1;
 
     state->endDataOverhead = endDataOverhead;
@@ -208,10 +208,10 @@ SSC_FORCE_INLINE SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_process(ssc_byte_b
     uint_fast64_t limitIn = 0;
     uint_fast64_t limitOut = 0;
 
-    if (in->size > SSC_HASH_DECODE_MINIMUM_INPUT_LOOKAHEAD + state->endDataOverhead)
-        limitIn = in->size - SSC_HASH_DECODE_MINIMUM_INPUT_LOOKAHEAD - state->endDataOverhead;
-    if (out->size > SSC_HASH_DECODE_MINIMUM_OUTPUT_LOOKAHEAD)
-        limitOut = out->size - SSC_HASH_DECODE_MINIMUM_OUTPUT_LOOKAHEAD;
+    if (in->size > SSC_CHAMELEON_DECODE_MINIMUM_INPUT_LOOKAHEAD + state->endDataOverhead)
+        limitIn = in->size - SSC_CHAMELEON_DECODE_MINIMUM_INPUT_LOOKAHEAD - state->endDataOverhead;
+    if (out->size > SSC_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD)
+        limitOut = out->size - SSC_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD;
 
     switch (state->process) {
         case SSC_CHAMELEON_DECODE_PROCESS_SIGNATURES_AND_DATA_FAST:

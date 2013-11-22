@@ -30,8 +30,8 @@
  * 24/10/13 12:05
  */
 
-#ifndef SSC_DICTIONARY_H
-#define SSC_DICTIONARY_H
+#ifndef SSC_CHAMELEON_DICTIONARY_H
+#define SSC_CHAMELEON_DICTIONARY_H
 
 #include "globals.h"
 #include "kernel_chameleon.h"
@@ -43,13 +43,13 @@
 typedef struct {
     uint32_t chunk;
     uint16_t next_hash_prediction;
-} ssc_dictionary_entry;
+} ssc_chameleon_dictionary_entry;
 
 typedef struct {
-    ssc_dictionary_entry entries[1 << SSC_CHAMELEON_HASH_BITS];
-} ssc_dictionary;
+    ssc_chameleon_dictionary_entry entries[1 << SSC_CHAMELEON_HASH_BITS];
+} ssc_chameleon_dictionary;
 #pragma pack(pop)
 
-void ssc_dictionary_reset(ssc_dictionary *);
+void ssc_chameleon_dictionary_reset(ssc_chameleon_dictionary *);
 
 #endif

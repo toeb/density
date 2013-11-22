@@ -30,8 +30,8 @@
  * 24/10/13 12:01
  */
 
-#ifndef SSC_HASH_ENCODE_H
-#define SSC_HASH_ENCODE_H
+#ifndef SSC_CHAMELEON_ENCODE_H
+#define SSC_CHAMELEON_ENCODE_H
 
 #include "byte_buffer.h"
 #include "kernel_chameleon_dictionary.h"
@@ -39,14 +39,14 @@
 #include "block.h"
 #include "kernel_encode.h"
 
-#define SSC_HASH_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD             (sizeof(ssc_hash_signature) + sizeof(uint32_t) * 8 * sizeof(ssc_hash_signature))
+#define SSC_CHAMELEON_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD             (sizeof(ssc_hash_signature) + sizeof(uint32_t) * 8 * sizeof(ssc_hash_signature))
 
 typedef enum {
-    SSC_HASH_ENCODE_PROCESS_CHECK_STATE,
-    SSC_HASH_ENCODE_PROCESS_PREPARE_NEW_BLOCK,
-    SSC_HASH_ENCODE_PROCESS_DATA,
-    SSC_HASH_ENCODE_PROCESS_FINISH
-} SSC_HASH_ENCODE_PROCESS;
+    SSC_CHAMELEON_ENCODE_PROCESS_CHECK_STATE,
+    SSC_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK,
+    SSC_CHAMELEON_ENCODE_PROCESS_DATA,
+    SSC_CHAMELEON_ENCODE_PROCESS_FINISH
+} SSC_CHAMELEON_ENCODE_PROCESS;
 
 typedef enum {
     SSC_CHAMELEON_ENCODE_MODE_MAP,
@@ -56,7 +56,7 @@ typedef enum {
 #pragma pack(push)
 #pragma pack(4)
 typedef struct {
-    SSC_HASH_ENCODE_PROCESS process;
+    SSC_CHAMELEON_ENCODE_PROCESS process;
 
     uint_fast64_t resetCycle;
 
@@ -67,7 +67,7 @@ typedef struct {
 
     SSC_CHAMELEON_ENCODE_MODE mode;
 
-    ssc_dictionary dictionary;
+    ssc_chameleon_dictionary dictionary;
 } ssc_chameleon_encode_state;
 #pragma pack(pop)
 
