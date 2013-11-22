@@ -71,12 +71,7 @@ typedef struct {
 } ssc_chameleon_encode_state;
 #pragma pack(pop)
 
-SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_init_1p(ssc_chameleon_encode_state *);
-SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_process_1p(ssc_byte_buffer *, ssc_byte_buffer *, ssc_chameleon_encode_state *, const ssc_bool);
-SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_finish_1p(ssc_chameleon_encode_state *);
-
-SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_init_2p(ssc_chameleon_encode_state *);
-SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_process_2p(ssc_byte_buffer *, ssc_byte_buffer *, ssc_chameleon_encode_state *, const ssc_bool);
-SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_finish_2p(ssc_chameleon_encode_state *);
-
+SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_init(ssc_chameleon_encode_state *);
+SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_process(ssc_byte_buffer *, ssc_byte_buffer *, ssc_chameleon_encode_state *, const ssc_bool);
+SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_finish(ssc_chameleon_encode_state *);
 #endif

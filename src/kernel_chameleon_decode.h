@@ -80,12 +80,8 @@ typedef struct {
 } ssc_chameleon_decode_state;
 #pragma pack(pop)
 
-SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_init_1p(ssc_chameleon_decode_state *, const uint_fast32_t);
-SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_process_1p(ssc_byte_buffer *, ssc_byte_buffer *, ssc_chameleon_decode_state *, const ssc_bool);
-SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_finish_1p(ssc_chameleon_decode_state *);
-
-SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_init_2p(ssc_chameleon_decode_state *, const uint_fast32_t);
-SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_process_2p(ssc_byte_buffer *, ssc_byte_buffer *, ssc_chameleon_decode_state *, const ssc_bool);
-SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_finish_2p(ssc_chameleon_decode_state *);
+SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_init(ssc_chameleon_decode_state *, const uint_fast32_t);
+SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_process(ssc_byte_buffer *, ssc_byte_buffer *, ssc_chameleon_decode_state *, const ssc_bool);
+SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_finish(ssc_chameleon_decode_state *);
 
 #endif

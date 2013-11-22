@@ -36,20 +36,12 @@
 #include "globals.h"
 #include "kernel_chameleon.h"
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#include "kernel_chameleon_dictionary_le.data"
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#include "kernel_chameleon_dictionary_be.data"
-#else
-#error Unable to load dictionary due to unsupported endian
-#endif
-
 #include <string.h>
 
 #pragma pack(push)
 #pragma pack(4)
 typedef struct {
-    uint32_t data;
+    uint32_t chunk;
     uint16_t next_hash_prediction;
 } ssc_dictionary_entry;
 
@@ -58,7 +50,6 @@ typedef struct {
 } ssc_dictionary;
 #pragma pack(pop)
 
-void ssc_dictionary_reset_1p(ssc_dictionary *);
-void ssc_dictionary_reset_2p(ssc_dictionary *);
+void ssc_dictionary_reset(ssc_dictionary *);
 
 #endif

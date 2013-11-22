@@ -30,11 +30,9 @@
  * 24/10/13 12:01
  */
 
-#ifdef SSC_CHAMELEON_CODE_INCLUSION
-
 #include "kernel_chameleon_encode.h"
 
-SSC_FORCE_INLINE void ssc_hash_encode_writeToSignature(ssc_chameleon_encode_state *state) {
+SSC_FORCE_INLINE void ssc_chameleon_encode_write_to_signature(ssc_chameleon_encode_state *state) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     *(state->signature) |= ((uint64_t) 1) << state->shift;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
@@ -42,7 +40,7 @@ SSC_FORCE_INLINE void ssc_hash_encode_writeToSignature(ssc_chameleon_encode_stat
 #endif
 }
 
-SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_hash_encode_prepareNewBlock(ssc_byte_buffer *restrict out, ssc_chameleon_encode_state *restrict state, const uint_fast32_t minimumLookahead) {
+SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_prepare_new_block(ssc_byte_buffer *restrict out, ssc_chameleon_encode_state *restrict state, const uint_fast32_t minimumLookahead) {
     if (out->position + minimumLookahead > out->size)
         return SSC_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
 
@@ -60,7 +58,7 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_hash_encode_prepareNewBlock(ssc_byt
             if (state->resetCycle)
                 state->resetCycle--;
             else {
-                CHAMELEON_NAME(ssc_dictionary_reset)(&state->dictionary);
+                ssc_dictionary_reset(&state->dictionary);
                 state->resetCycle = SSC_DICTIONARY_PREFERRED_RESET_CYCLE - 1;
             }
 
@@ -78,12 +76,12 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_hash_encode_prepareNewBlock(ssc_byt
     return SSC_KERNEL_ENCODE_STATE_READY;
 }
 
-SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_hash_encode_checkState(ssc_byte_buffer *restrict out, ssc_chameleon_encode_state *restrict state) {
+SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_check_state(ssc_byte_buffer *restrict out, ssc_chameleon_encode_state *restrict state) {
     SSC_KERNEL_ENCODE_STATE returnState;
 
     switch (state->shift) {
         case 64:
-            if ((returnState = ssc_hash_encode_prepareNewBlock(out, state, SSC_HASH_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD))) {
+            if ((returnState = ssc_chameleon_encode_prepare_new_block(out, state, SSC_HASH_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD))) {
                 state->process = SSC_HASH_ENCODE_PROCESS_PREPARE_NEW_BLOCK;
                 return returnState;
             }
@@ -95,16 +93,16 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_hash_encode_checkState(ssc_byte_buf
     return SSC_KERNEL_ENCODE_STATE_READY;
 }
 
-SSC_FORCE_INLINE void ssc_hash_encode_kernel(ssc_byte_buffer *restrict out, uint32_t *restrict hash, const uint32_t chunk, ssc_chameleon_encode_state *restrict state) {
+SSC_FORCE_INLINE void ssc_chameleon_encode_kernel(ssc_byte_buffer *restrict out, uint32_t *restrict hash, const uint32_t chunk, ssc_chameleon_encode_state *restrict state) {
     SSC_CHAMELEON_HASH_ALGORITHM(*hash, SSC_LITTLE_ENDIAN_32(chunk));
     ssc_dictionary_entry *found = &state->dictionary.entries[*hash];
 
-    if (chunk ^ found->as_uint32_t) {
-        found->as_uint32_t = chunk;
+    if (chunk ^ found->chunk) {
+        found->chunk = chunk;
         *(uint32_t *) (out->pointer + out->position) = chunk;
         out->position += sizeof(uint32_t);
     } else {
-        ssc_hash_encode_writeToSignature(state);
+        ssc_chameleon_encode_write_to_signature(state);
         *(uint16_t *) (out->pointer + out->position) = SSC_LITTLE_ENDIAN_16(*hash);
         out->position += sizeof(uint16_t);
     }
@@ -112,26 +110,26 @@ SSC_FORCE_INLINE void ssc_hash_encode_kernel(ssc_byte_buffer *restrict out, uint
     state->shift++;
 }
 
-SSC_FORCE_INLINE void ssc_hash_encode_process_chunk(uint64_t *chunk, ssc_byte_buffer *restrict in, ssc_byte_buffer *restrict out, uint32_t *restrict hash, ssc_chameleon_encode_state *restrict state) {
+SSC_FORCE_INLINE void ssc_chameleon_encode_process_chunk(uint64_t *chunk, ssc_byte_buffer *restrict in, ssc_byte_buffer *restrict out, uint32_t *restrict hash, ssc_chameleon_encode_state *restrict state) {
     *chunk = *(uint64_t *) (in->pointer + in->position);
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    ssc_hash_encode_kernel(out, hash, (uint32_t) (*chunk & 0xFFFFFFFF), state);
+    ssc_chameleon_encode_kernel(out, hash, (uint32_t) (*chunk & 0xFFFFFFFF), state);
 #endif
-    ssc_hash_encode_kernel(out, hash, (uint32_t) (*chunk >> 32), state);
+    ssc_chameleon_encode_kernel(out, hash, (uint32_t) (*chunk >> 32), state);
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    ssc_hash_encode_kernel(out, hash, (uint32_t) (*chunk & 0xFFFFFFFF), state);
+    ssc_chameleon_encode_kernel(out, hash, (uint32_t) (*chunk & 0xFFFFFFFF), state);
 #endif
     in->position += sizeof(uint64_t);
 }
 
-SSC_FORCE_INLINE void ssc_hash_encode_process_span(uint64_t *chunk, ssc_byte_buffer *restrict in, ssc_byte_buffer *restrict out, uint32_t *restrict hash, ssc_chameleon_encode_state *restrict state) {
-    ssc_hash_encode_process_chunk(chunk, in, out, hash, state);
-    ssc_hash_encode_process_chunk(chunk, in, out, hash, state);
-    ssc_hash_encode_process_chunk(chunk, in, out, hash, state);
-    ssc_hash_encode_process_chunk(chunk, in, out, hash, state);
+SSC_FORCE_INLINE void ssc_chameleon_encode_process_span(uint64_t *chunk, ssc_byte_buffer *restrict in, ssc_byte_buffer *restrict out, uint32_t *restrict hash, ssc_chameleon_encode_state *restrict state) {
+    ssc_chameleon_encode_process_chunk(chunk, in, out, hash, state);
+    ssc_chameleon_encode_process_chunk(chunk, in, out, hash, state);
+    ssc_chameleon_encode_process_chunk(chunk, in, out, hash, state);
+    ssc_chameleon_encode_process_chunk(chunk, in, out, hash, state);
 }
 
-SSC_FORCE_INLINE ssc_bool ssc_hash_encode_attempt_copy(ssc_byte_buffer *restrict out, ssc_byte *restrict origin, const uint_fast32_t count) {
+SSC_FORCE_INLINE ssc_bool ssc_chameleon_encode_attempt_copy(ssc_byte_buffer *restrict out, ssc_byte *restrict origin, const uint_fast32_t count) {
     if (out->position + count <= out->size) {
         memcpy(out->pointer + out->position, origin, count);
         out->position += count;
@@ -140,10 +138,10 @@ SSC_FORCE_INLINE ssc_bool ssc_hash_encode_attempt_copy(ssc_byte_buffer *restrict
     return true;
 }
 
-SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE CHAMELEON_NAME(ssc_chameleon_encode_init)(ssc_chameleon_encode_state *state) {
+SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_init(ssc_chameleon_encode_state *state) {
     state->signaturesCount = 0;
     state->efficiencyChecked = 0;
-    CHAMELEON_NAME(ssc_dictionary_reset)(&state->dictionary);
+    ssc_dictionary_reset(&state->dictionary);
     state->resetCycle = SSC_DICTIONARY_PREFERRED_RESET_CYCLE - 1;
 
     state->process = SSC_HASH_ENCODE_PROCESS_PREPARE_NEW_BLOCK;
@@ -151,7 +149,7 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE CHAMELEON_NAME(ssc_chameleon_encode_ini
     return SSC_KERNEL_ENCODE_STATE_READY;
 }
 
-SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE CHAMELEON_NAME(ssc_chameleon_encode_process)(ssc_byte_buffer *restrict in, ssc_byte_buffer *restrict out, ssc_chameleon_encode_state *restrict state, const ssc_bool flush) {
+SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_process(ssc_byte_buffer *restrict in, ssc_byte_buffer *restrict out, ssc_chameleon_encode_state *restrict state, const ssc_bool flush) {
     SSC_KERNEL_ENCODE_STATE returnState;
     uint32_t hash;
     uint_fast64_t remaining;
@@ -164,13 +162,13 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE CHAMELEON_NAME(ssc_chameleon_encode_pro
 
     switch (state->process) {
         case SSC_HASH_ENCODE_PROCESS_CHECK_STATE:
-            if ((returnState = ssc_hash_encode_checkState(out, state)))
+            if ((returnState = ssc_chameleon_encode_check_state(out, state)))
                 return returnState;
             state->process = SSC_HASH_ENCODE_PROCESS_DATA;
             break;
 
         case SSC_HASH_ENCODE_PROCESS_PREPARE_NEW_BLOCK:
-            if ((returnState = ssc_hash_encode_prepareNewBlock(out, state, SSC_HASH_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD)))
+            if ((returnState = ssc_chameleon_encode_prepare_new_block(out, state, SSC_HASH_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD)))
                 return returnState;
             state->process = SSC_HASH_ENCODE_PROCESS_DATA;
             break;
@@ -179,7 +177,7 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE CHAMELEON_NAME(ssc_chameleon_encode_pro
             if (in->size - in->position < 4 * sizeof(uint64_t))
                 goto finish;
             while (true) {
-                ssc_hash_encode_process_span(&chunk, in, out, &hash, state);
+                ssc_chameleon_encode_process_span(&chunk, in, out, &hash, state);
                 if (in->position == limit) {
                     if (flush) {
                         state->process = SSC_HASH_ENCODE_PROCESS_FINISH;
@@ -190,7 +188,7 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE CHAMELEON_NAME(ssc_chameleon_encode_pro
                     }
                 }
 
-                if ((returnState = ssc_hash_encode_checkState(out, state)))
+                if ((returnState = ssc_chameleon_encode_check_state(out, state)))
                     return returnState;
             }
 
@@ -202,19 +200,19 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE CHAMELEON_NAME(ssc_chameleon_encode_pro
                     else {
                         if (out->size - out->position < sizeof(uint32_t))
                             return SSC_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
-                        ssc_hash_encode_kernel(out, &hash, *(uint32_t *) (in->pointer + in->position), state);
+                        ssc_chameleon_encode_kernel(out, &hash, *(uint32_t *) (in->pointer + in->position), state);
                         in->position += sizeof(uint32_t);
                     }
                 }
                 if (in->size - in->position < sizeof(uint32_t))
                     goto finish;
-                else if ((returnState = ssc_hash_encode_prepareNewBlock(out, state, sizeof(ssc_hash_signature))))
+                else if ((returnState = ssc_chameleon_encode_prepare_new_block(out, state, sizeof(ssc_hash_signature))))
                     return returnState;
             }
         finish:
             remaining = in->size - in->position;
             if (remaining > 0) {
-                if (ssc_hash_encode_attempt_copy(out, in->pointer + in->position, (uint32_t) remaining))
+                if (ssc_chameleon_encode_attempt_copy(out, in->pointer + in->position, (uint32_t) remaining))
                     return SSC_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
                 in->position += remaining;
             }
@@ -230,8 +228,6 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE CHAMELEON_NAME(ssc_chameleon_encode_pro
             SSC_KERNEL_ENCODE_STATE_READY;
 }
 
-SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE CHAMELEON_NAME(ssc_chameleon_encode_finish)(ssc_chameleon_encode_state *state) {
+SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_finish(ssc_chameleon_encode_state *state) {
     return SSC_KERNEL_ENCODE_STATE_READY;
 }
-
-#endif

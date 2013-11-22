@@ -44,6 +44,7 @@
 
 typedef uint64_t                                                    ssc_hash_signature;
 
+#define SSC_CHAMELEON_HASH_OFFSET_BASIS                             (uint32_t)2885564586
 #define SSC_CHAMELEON_HASH_ALGORITHM(hash, value)                   hash = SSC_CHAMELEON_HASH_OFFSET_BASIS;\
                                                                     hash ^= value;\
                                                                     hash *= SSC_CHAMELEON_HASH_PRIME;\

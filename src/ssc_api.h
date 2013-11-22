@@ -167,13 +167,13 @@ SSC_STREAM_STATE ssc_stream_prepare(ssc_stream *stream, uint8_t* input_buffer, c
  *
  * @param stream the stream
  * @param compression_mode the compression mode
- * @param output_type the format of data output by encoding.
+ * @param output_type the format of chunk output by encoding.
  *      EXPERTS ONLY ! If unsure, use SSC_ENCODE_OUTPUT_TYPE_DEFAULT.
- *      Any other option will create output data which is *NOT* directly decompressible by the API. This can be used for parallelizing SSC.
- * @param block_type the type of data blocks SSC will generate.
+ *      Any other option will create output chunk which is *NOT* directly decompressible by the API. This can be used for parallelizing SSC.
+ * @param block_type the type of chunk blocks SSC will generate.
  *      EXPERTS ONLY ! If you're unsure use SSC_BLOCK_TYPE_DEFAULT.
- *      The option SSC_BLOCK_TYPE_NO_HASHSUM_INTEGRITY_CHECK basically makes the block footer size zero, and removes data integrity checks in the encoded output.
- *      It can be useful in network streaming situations, where data integrity is already checked by the protocol (TCP/IP for example), and the flush option in ssc_stream_compress is often set,
+ *      The option SSC_BLOCK_TYPE_NO_HASHSUM_INTEGRITY_CHECK basically makes the block footer size zero, and removes chunk integrity checks in the encoded output.
+ *      It can be useful in network streaming situations, where chunk integrity is already checked by the protocol (TCP/IP for example), and the flush option in ssc_stream_compress is often set,
  *      as the absence of block footer will enhance compression ratio.
  */
 SSC_STREAM_STATE ssc_stream_compress_init(ssc_stream *stream, const SSC_COMPRESSION_MODE compression_mode, const SSC_ENCODE_OUTPUT_TYPE output_type, const SSC_BLOCK_TYPE block_type);
@@ -193,7 +193,7 @@ SSC_STREAM_STATE ssc_stream_decompress_init(ssc_stream *stream);
  *      Please note that the input buffer size, if flush is false, *must* be a multiple of 32 otherwise an error will be returned.
  * @param flush a boolean indicating flush behaviour
  *      If set to true, this will ensure that every byte from the input buffer will have its counterpart in the output buffer.
- *      flush has to be true when the presented data is the last (end of a file for example).
+ *      flush has to be true when the presented chunk is the last (end of a file for example).
  *      It can also be set to true multiple times to handle network streaming for example. In that case, please also check
  *      the block_type parameter of ssc_stream_compress_init to enable a better compression ratio. It is also worth noting that
  *      the *best* input buffer size for compression ratio matters should be a multiple of 256, any other size will also work but will
@@ -208,7 +208,7 @@ SSC_STREAM_STATE ssc_stream_compress(ssc_stream *stream, const ssc_bool flush);
  * @param stream the stream
  * @param flush a boolean indicating flush behaviour
  *      If set to true, this will ensure that every byte from the input buffer will have its counterpart in the output buffer.
- *      flush has to be true when the presented data is the last (end of a file for example)
+ *      flush has to be true when the presented chunk is the last (end of a file for example)
  *      It can also be set to true multiple times to handle network streaming for example.
  */
 SSC_STREAM_STATE ssc_stream_decompress(ssc_stream *stream, const ssc_bool flush);
@@ -244,10 +244,10 @@ SSC_STREAM_STATE ssc_stream_decompress_utilities_get_header(ssc_stream* stream, 
  ***********************************************************************************************************************/
 
 /*
- * Returns the max compressed length possible (with incompressible data)
+ * Returns the max compressed length possible (with incompressible chunk)
  *
  * @param result a pointer to return the resulting length to
- * @param in_length, the length of the input data to compress
+ * @param in_length, the length of the input chunk to compress
  * @param compression_mode the compression mode to be used
  */
 SSC_BUFFERS_STATE ssc_buffers_max_compressed_length(uint_fast64_t * result, uint_fast64_t in_length, const SSC_COMPRESSION_MODE compression_mode);

@@ -41,7 +41,7 @@
 #pragma pack(4)
 typedef struct {
     ssc_byte activeBlockMode;
-    ssc_byte reserved;    // To ensure 2-byte-wise length of output data // todo
+    ssc_byte reserved;    // To ensure 2-byte-wise length of output chunk // todo
 } ssc_mode_marker;
 #pragma pack(pop)
 
