@@ -49,7 +49,8 @@
 #pragma pack(push)
 #pragma pack(4)
 typedef struct {
-    uint32_t as_uint32_t;
+    uint32_t data;
+    uint16_t next_hash_prediction;
 } ssc_dictionary_entry;
 
 typedef struct {

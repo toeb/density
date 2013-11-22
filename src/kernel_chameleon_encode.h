@@ -48,6 +48,11 @@ typedef enum {
     SSC_HASH_ENCODE_PROCESS_FINISH
 } SSC_HASH_ENCODE_PROCESS;
 
+typedef enum {
+    SSC_CHAMELEON_ENCODE_MODE_MAP,
+    SSC_CHAMELEON_ENCODE_MODE_PREDICTION
+} SSC_CHAMELEON_ENCODE_MODE;
+
 #pragma pack(push)
 #pragma pack(4)
 typedef struct {
@@ -59,6 +64,8 @@ typedef struct {
     ssc_hash_signature * signature;
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;
+
+    SSC_CHAMELEON_ENCODE_MODE mode;
 
     ssc_dictionary dictionary;
 } ssc_chameleon_encode_state;
