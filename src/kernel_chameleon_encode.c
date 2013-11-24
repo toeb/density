@@ -95,16 +95,16 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_check_state(ssc_by
 }
 
 SSC_FORCE_INLINE void ssc_chameleon_encode_kernel(ssc_byte_buffer *restrict out, uint32_t *restrict hash, const uint32_t chunk, ssc_chameleon_encode_state *restrict state) {
-    ssc_chameleon_dictionary_prediction_entry *prediction = &state->dictionary.prediction_entries[state->lastHash];
+    ssc_chameleon_dictionary_prediction_entry *previous = &state->dictionary.prediction_entries[state->lastHash];
 
-    if(state->dictionary.entries_a[prediction->next_hash_prediction].chunk == chunk) {
+    if(state->dictionary.entries_a[previous->next_hash_prediction].chunk == chunk) {
         ssc_chameleon_encode_write_to_signature(state, 1);
-        state->lastHash = prediction->next_hash_prediction;
+        state->lastHash = previous->next_hash_prediction;
     } else {
         SSC_CHAMELEON_HASH_ALGORITHM(*hash, SSC_LITTLE_ENDIAN_32(chunk));
         ssc_chameleon_dictionary_entry *found_a = &state->dictionary.entries_a[*hash];
         if(found_a->chunk == chunk) {
-            ssc_chameleon_encode_write_to_signature(state, 0);
+            //ssc_chameleon_encode_write_to_signature(state, 0);
             *(uint16_t *) (out->pointer + out->position) = SSC_LITTLE_ENDIAN_16(*hash);
             out->position += sizeof(uint16_t);
         } else {
@@ -113,16 +113,17 @@ SSC_FORCE_INLINE void ssc_chameleon_encode_kernel(ssc_byte_buffer *restrict out,
                 ssc_chameleon_encode_write_to_signature(state, 3);
                 *(uint16_t *) (out->pointer + out->position) = SSC_LITTLE_ENDIAN_16(*hash);
                 out->position += sizeof(uint16_t);
+                found_b->chunk = found_a->chunk;
                 found_a->chunk = chunk;
             } else {
                 ssc_chameleon_encode_write_to_signature(state, 2);
-                found_b->chunk = found_a->chunk;
-                found_a->chunk = chunk;
                 *(uint32_t *) (out->pointer + out->position) = chunk;
                 out->position += sizeof(uint32_t);
+                found_b->chunk = found_a->chunk;
+                found_a->chunk = chunk;
             }
         }
-        prediction->next_hash_prediction = (uint16_t)(*hash & 0xFFFF);
+        previous->next_hash_prediction = (uint16_t)(*hash & 0xFFFF);
         state->lastHash = *hash;
     }
 
