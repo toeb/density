@@ -2,7 +2,7 @@
  * Centaurean libssc
  * http://www.libssc.net
  *
- * Copyright (c) 2013, Guillaume Voirin
+ * Copyright (c) 2013, Guillaume Voirin & Piotr Tarsa
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,11 @@
  */
 
 #include "kernel_chameleon_encode.h"
+#include "kernel_chameleon_dictionary.h"
 
-SSC_FORCE_INLINE void ssc_chameleon_encode_write_to_signature(ssc_chameleon_encode_state *state) {
+SSC_FORCE_INLINE void ssc_chameleon_encode_write_to_signature(ssc_chameleon_encode_state *state, uint_fast8_t flag) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    *(state->signature) |= ((uint64_t) 1) << state->shift;
+    *(state->signature) |= ((uint64_t) flag) << state->shift;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     *(state->signature) |= ((uint64_t) 1) << ((56 - (state->shift & ~0x7)) + (state->shift & 0x7));
 #endif
@@ -94,20 +95,38 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_check_state(ssc_by
 }
 
 SSC_FORCE_INLINE void ssc_chameleon_encode_kernel(ssc_byte_buffer *restrict out, uint32_t *restrict hash, const uint32_t chunk, ssc_chameleon_encode_state *restrict state) {
-    SSC_CHAMELEON_HASH_ALGORITHM(*hash, SSC_LITTLE_ENDIAN_32(chunk));
-    ssc_chameleon_dictionary_entry *found = &state->dictionary.entries[*hash];
+    ssc_chameleon_dictionary_prediction_entry *prediction = &state->dictionary.prediction_entries[state->lastHash];
 
-    if (chunk ^ found->chunk) {
-        found->chunk = chunk;
-        *(uint32_t *) (out->pointer + out->position) = chunk;
-        out->position += sizeof(uint32_t);
+    if(state->dictionary.entries_a[prediction->next_hash_prediction].chunk == chunk) {
+        ssc_chameleon_encode_write_to_signature(state, 1);
+        state->lastHash = prediction->next_hash_prediction;
     } else {
-        ssc_chameleon_encode_write_to_signature(state);
-        *(uint16_t *) (out->pointer + out->position) = SSC_LITTLE_ENDIAN_16(*hash);
-        out->position += sizeof(uint16_t);
+        SSC_CHAMELEON_HASH_ALGORITHM(*hash, SSC_LITTLE_ENDIAN_32(chunk));
+        ssc_chameleon_dictionary_entry *found_a = &state->dictionary.entries_a[*hash];
+        if(found_a->chunk == chunk) {
+            ssc_chameleon_encode_write_to_signature(state, 0);
+            *(uint16_t *) (out->pointer + out->position) = SSC_LITTLE_ENDIAN_16(*hash);
+            out->position += sizeof(uint16_t);
+        } else {
+            ssc_chameleon_dictionary_entry *found_b = &state->dictionary.entries_b[*hash];
+            if(found_b->chunk == chunk) {
+                ssc_chameleon_encode_write_to_signature(state, 3);
+                *(uint16_t *) (out->pointer + out->position) = SSC_LITTLE_ENDIAN_16(*hash);
+                out->position += sizeof(uint16_t);
+                found_a->chunk = chunk;
+            } else {
+                ssc_chameleon_encode_write_to_signature(state, 2);
+                found_b->chunk = found_a->chunk;
+                found_a->chunk = chunk;
+                *(uint32_t *) (out->pointer + out->position) = chunk;
+                out->position += sizeof(uint32_t);
+            }
+        }
+        prediction->next_hash_prediction = (uint16_t)(*hash & 0xFFFF);
+        state->lastHash = *hash;
     }
 
-    state->shift++;
+    state->shift+=2;
 }
 
 SSC_FORCE_INLINE void ssc_chameleon_encode_process_chunk(uint64_t *chunk, ssc_byte_buffer *restrict in, ssc_byte_buffer *restrict out, uint32_t *restrict hash, ssc_chameleon_encode_state *restrict state) {

@@ -66,6 +66,7 @@ typedef struct {
     uint_fast8_t efficiencyChecked;
 
     SSC_CHAMELEON_ENCODE_MODE mode;
+    uint_fast32_t lastHash;
 
     ssc_chameleon_dictionary dictionary;
 } ssc_chameleon_encode_state;
