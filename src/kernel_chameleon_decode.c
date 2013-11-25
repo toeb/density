@@ -121,14 +121,14 @@ SSC_FORCE_INLINE SSC_KERNEL_DECODE_STATE ssc_chameleon_decode_read_uncompressed_
 }
 
 SSC_FORCE_INLINE void ssc_chameleon_decode_compressed_chunk(const uint16_t *chunk, ssc_byte_buffer *restrict out, ssc_chameleon_decode_state *restrict state) {
-    //*(uint32_t *) (out->pointer + out->position) = (&state->dictionary.entries_a[SSC_LITTLE_ENDIAN_16(*chunk)])->chunk;
+    //*(uint32_t *) (out->pointer + out->position) = (&state->dictionary.entries[SSC_LITTLE_ENDIAN_16(*chunk)])->chunk;
     out->position += sizeof(uint32_t);
 }
 
 SSC_FORCE_INLINE void ssc_chameleon_decode_uncompressed_chunk(const uint32_t *chunk, ssc_byte_buffer *restrict out, ssc_chameleon_decode_state *restrict state) {
     uint32_t hash;
     SSC_CHAMELEON_HASH_ALGORITHM(hash, SSC_LITTLE_ENDIAN_32(*chunk));
-    //(&state->dictionary.entries_a[hash])->chunk = *chunk;
+    //(&state->dictionary.entries[hash])->chunk = *chunk;
     *(uint32_t *) (out->pointer + out->position) = *chunk;
     out->position += sizeof(uint32_t);
 }
