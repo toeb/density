@@ -49,9 +49,11 @@ typedef enum {
 } SSC_CHAMELEON_ENCODE_PROCESS;
 
 typedef enum {
-    SSC_CHAMELEON_ENCODE_MODE_MAP,
-    SSC_CHAMELEON_ENCODE_MODE_PREDICTION
-} SSC_CHAMELEON_ENCODE_MODE;
+    SSC_CHAMELEON_ENCODE_FLAG_MAP_A = 0x0,
+    SSC_CHAMELEON_ENCODE_FLAG_PREDICTED = 0x1,
+    SSC_CHAMELEON_ENCODE_FLAG_CHUNK = 0x2,
+    SSC_CHAMELEON_ENCODE_FLAG_MAP_B = 0x3,
+} SSC_CHAMELEON_ENCODE_FLAG;
 
 #pragma pack(push)
 #pragma pack(4)
@@ -65,8 +67,7 @@ typedef struct {
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;
 
-    SSC_CHAMELEON_ENCODE_MODE mode;
-    uint_fast32_t lastHash;
+    uint_fast16_t lastHash;
 
     ssc_chameleon_dictionary dictionary;
 } ssc_chameleon_encode_state;
