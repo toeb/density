@@ -94,40 +94,34 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_check_state(ssc_by
 }
 
 SSC_FORCE_INLINE void ssc_chameleon_encode_kernel(ssc_byte_buffer *restrict out, uint32_t *restrict hash, const uint32_t chunk, ssc_chameleon_encode_state *restrict state) {
-    uint16_t *predictedHashA = &(state->dictionary.prediction_entries_a[state->lastHash].next_hash_prediction);
+    uint16_t *predictedHash = &(state->dictionary.prediction_entries[state->lastHash].next_hash_prediction);
 
-    if (state->dictionary.entries[*predictedHashA].chunk ^ chunk) {
-        uint16_t *predictedHashB = &(state->dictionary.prediction_entries_b[state->lastHash].next_hash_prediction);
-
-        if (state->dictionary.entries[*predictedHashB].chunk ^ chunk) {
-            SSC_CHAMELEON_HASH_ALGORITHM(*hash, SSC_LITTLE_ENDIAN_32(chunk));
-            ssc_chameleon_dictionary_entry *found = &state->dictionary.entries[*hash];
-
-            if (found->chunk ^ chunk) {
+    if (state->dictionary.entries_a[*predictedHash].chunk ^ chunk) {
+        SSC_CHAMELEON_HASH_ALGORITHM(*hash, SSC_LITTLE_ENDIAN_32(chunk));
+        ssc_chameleon_dictionary_entry *found_a = &state->dictionary.entries_a[*hash];
+        if (found_a->chunk ^ chunk) {
+            ssc_chameleon_dictionary_entry *found_b = &state->dictionary.entries_b[*hash];
+            if (found_b->chunk ^ chunk) {
                 ssc_chameleon_encode_write_to_signature(state, SSC_CHAMELEON_ENCODE_FLAG_CHUNK);
                 *(uint32_t *) (out->pointer + out->position) = chunk;
                 out->position += sizeof(uint32_t);
-
-                found->chunk = chunk;
-            } else {
-                //ssc_chameleon_encode_write_to_signature(state, SSC_CHAMELEON_ENCODE_FLAG_MAP);
+            } else  {
+                ssc_chameleon_encode_write_to_signature(state, SSC_CHAMELEON_ENCODE_FLAG_MAP_B);
                 *(uint16_t *) (out->pointer + out->position) = SSC_LITTLE_ENDIAN_16(*hash);
                 out->position += sizeof(uint16_t);
             }
-
-            *predictedHashB = *predictedHashA;
-            *predictedHashA = (uint16_t) *hash;
-            state->lastHash = *predictedHashA;
-        } else {
-            ssc_chameleon_encode_write_to_signature(state, SSC_CHAMELEON_ENCODE_FLAG_PREDICTED_B);
-            state->lastHash = *predictedHashB;
-            uint16_t swap = *predictedHashA;
-            *predictedHashA = *predictedHashB;
-            *predictedHashB = swap;
+            found_b->chunk = found_a->chunk;
+            found_a->chunk = chunk;
+        } else  {
+            //ssc_chameleon_encode_write_to_signature(state, SSC_CHAMELEON_ENCODE_FLAG_MAP_A);
+            *(uint16_t *) (out->pointer + out->position) = SSC_LITTLE_ENDIAN_16(*hash);
+            out->position += sizeof(uint16_t);
         }
+        *predictedHash = (uint16_t) (*hash & 0xFFFF);
+        state->lastHash = *predictedHash;
     } else {
-        ssc_chameleon_encode_write_to_signature(state, SSC_CHAMELEON_ENCODE_FLAG_PREDICTED_A);
-        state->lastHash = *predictedHashA;
+        ssc_chameleon_encode_write_to_signature(state, SSC_CHAMELEON_ENCODE_FLAG_PREDICTED);
+        state->lastHash = *predictedHash;
     }
 
     state->shift += 2;
