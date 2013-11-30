@@ -45,7 +45,7 @@ typedef struct {
 } ssc_chameleon_dictionary_entry;
 
 typedef struct {
-    uint16_t next_hash_prediction;
+    uint32_t next_chunk_prediction;
 } ssc_chameleon_dictionary_prediction_entry;
 
 typedef struct {

@@ -2,7 +2,7 @@
  * Centaurean libssc
  * http://www.libssc.net
  *
- * Copyright (c) 2013, Guillaume Voirin & Piotr Tarsa
+ * Copyright (c) 2013, Guillaume Voirin
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  * 24/10/13 12:01
+ *
+ * Predictions idea by Piotr Tarsa
+ *
  */
 
 #include "kernel_chameleon_encode.h"
@@ -94,10 +97,10 @@ SSC_FORCE_INLINE SSC_KERNEL_ENCODE_STATE ssc_chameleon_encode_check_state(ssc_by
 }
 
 SSC_FORCE_INLINE void ssc_chameleon_encode_kernel(ssc_byte_buffer *restrict out, uint32_t *restrict hash, const uint32_t chunk, ssc_chameleon_encode_state *restrict state) {
-    uint16_t *predictedHash = &(state->dictionary.prediction_entries[state->lastHash].next_hash_prediction);
+    SSC_CHAMELEON_HASH_ALGORITHM(*hash, SSC_LITTLE_ENDIAN_32(chunk));
+    uint32_t *predictedChunk = &(state->dictionary.prediction_entries[state->lastHash].next_chunk_prediction);
 
-    if (state->dictionary.entries_a[*predictedHash].chunk ^ chunk) {
-        SSC_CHAMELEON_HASH_ALGORITHM(*hash, SSC_LITTLE_ENDIAN_32(chunk));
+    if (*predictedChunk ^ chunk) {
         ssc_chameleon_dictionary_entry *found_a = &state->dictionary.entries_a[*hash];
         if (found_a->chunk ^ chunk) {
             ssc_chameleon_dictionary_entry *found_b = &state->dictionary.entries_b[*hash];
@@ -117,12 +120,11 @@ SSC_FORCE_INLINE void ssc_chameleon_encode_kernel(ssc_byte_buffer *restrict out,
             *(uint16_t *) (out->pointer + out->position) = SSC_LITTLE_ENDIAN_16(*hash);
             out->position += sizeof(uint16_t);
         }
-        *predictedHash = (uint16_t) (*hash & 0xFFFF);
-        state->lastHash = *predictedHash;
+        *predictedChunk = chunk;
     } else {
         ssc_chameleon_encode_write_to_signature(state, SSC_CHAMELEON_ENCODE_FLAG_PREDICTED);
-        state->lastHash = *predictedHash;
     }
+    state->lastHash = (uint16_t)(*hash & 0xFFFF);
 
     state->shift += 2;
 }
