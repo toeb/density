@@ -50,4 +50,7 @@ typedef uint64_t                                                    ssc_hash_sig
                                                                     hash *= SSC_CHAMELEON_HASH_PRIME;\
                                                                     hash = (hash >> (32 - SSC_CHAMELEON_HASH_BITS)) ^ (hash & ((1 << SSC_CHAMELEON_HASH_BITS) - 1));
 
+//#define SSC_CHAMELEON_HASH_ALGORITHM(hash, value)                   hash = value * 12345679lu;\
+                                                                    hash = (hash >> (32 - SSC_CHAMELEON_HASH_BITS));
+
 #endif

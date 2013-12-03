@@ -41,7 +41,8 @@
 #pragma pack(push)
 #pragma pack(4)
 typedef struct {
-    uint32_t chunk;
+    uint32_t layer_a;
+    uint32_t layer_b;
 } ssc_chameleon_dictionary_entry;
 
 typedef struct {
@@ -49,8 +50,7 @@ typedef struct {
 } ssc_chameleon_dictionary_prediction_entry;
 
 typedef struct {
-    ssc_chameleon_dictionary_entry entries_a[1 << SSC_CHAMELEON_HASH_BITS];
-    ssc_chameleon_dictionary_entry entries_b[1 << SSC_CHAMELEON_HASH_BITS];
+    ssc_chameleon_dictionary_entry entries[1 << SSC_CHAMELEON_HASH_BITS];
     ssc_chameleon_dictionary_prediction_entry prediction_entries[1 << SSC_CHAMELEON_HASH_BITS];
 } ssc_chameleon_dictionary;
 #pragma pack(pop)
