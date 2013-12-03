@@ -102,9 +102,9 @@ SSC_FORCE_INLINE void ssc_chameleon_encode_kernel(ssc_byte_buffer *restrict out,
 
     if (*predictedChunk ^ chunk) {
         ssc_chameleon_dictionary_entry* found = &state->dictionary.entries[*hash];
-        uint32_t* found_a = &found->layer_a;
+        uint32_t* found_a = &found->chunk_a;
         if (*found_a ^ chunk) {
-            uint32_t* found_b = &found->layer_b;
+            uint32_t* found_b = &found->chunk_b;
             if (*found_b ^ chunk) {
                 ssc_chameleon_encode_write_to_signature(state, SSC_CHAMELEON_ENCODE_FLAG_CHUNK);
                 *(uint32_t *) (out->pointer + out->position) = chunk;
