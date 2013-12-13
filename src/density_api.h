@@ -95,7 +95,7 @@ typedef enum {
     DENSITY_STREAM_STATE_READY = 0,                                     // ready to continue
     DENSITY_STREAM_STATE_STALL_ON_INPUT_BUFFER,                         // input buffer has been completely read
     DENSITY_STREAM_STATE_STALL_ON_OUTPUT_BUFFER,                        // there is not enought space left in the output buffer to continue
-    DENSITY_STREAM_STATE_ERROR_INPUT_BUFFER_SIZE_NOT_MULTIPLE_OF_32,    // size of input buffer is not a multiple of 32
+    //DENSITY_STREAM_STATE_ERROR_INPUT_BUFFER_SIZE_NOT_MULTIPLE_OF_32,    // size of input buffer is not a multiple of 32
     DENSITY_STREAM_STATE_ERROR_OUTPUT_BUFFER_TOO_SMALL,                 // output buffer size is too small
     DENSITY_STREAM_STATE_ERROR_INVALID_INTERNAL_STATE                   // error during processing
 } DENSITY_STREAM_STATE;
@@ -117,12 +117,15 @@ typedef struct {
 } density_byte_buffer;*/
 
 typedef struct {
-    uint8_t* in;
-    uint_fast64_t* available_in;
+    density_byte* pointer;
+    uint_fast64_t available_bytes;
+} density_memory_location;
+
+typedef struct {
+    density_memory_location* in;
     uint_fast64_t* in_total_read;
 
-    uint8_t* out;
-    uint_fast64_t* available_out;
+    density_memory_location* out;
     uint_fast64_t* out_total_written;
 
     void* internal_state;
@@ -156,37 +159,18 @@ uint8_t density_version_revision(void);
 
 /***********************************************************************************************************************
  *                                                                                                                     *
- * Density byte buffer utilities                                                                                       *
- *                                                                                                                     *
- ***********************************************************************************************************************/
-
-/*
- * Rewind an Density byte buffer
- *
- * @param byte_buffer the Density byte buffer to rewind (its position is set to zero)
- */
-void density_byte_buffer_rewind(density_byte_buffer* byte_buffer);
-
-
-
-/***********************************************************************************************************************
- *                                                                                                                     *
  * Density stream API functions                                                                                        *
  *                                                                                                                     *
  ***********************************************************************************************************************/
 
 /*
- * Prepare a stream with the encapsulated input/output buffers. This function *must* be called upon changing either buffer pointers / sizes.
+ * Prepare a stream. This function *must* be called.
  *
  * @param stream the stream
- * @param input_buffer a buffer of bytes
- * @param input_size the size in bytes of input_buffer
- * @param output_buffer a buffer of bytes
- * @param output_size the size of output_buffer, must be at least DENSITY_STREAM_MINIMUM_OUT_BUFFER_SIZE
  * @param mem_alloc a pointer to a memory allocation function. If NULL, the standard malloc(size_t) is used.
  * @param mem_free a pointer to a memory freeing function. If NULL, the standard free(void*) is used.
  */
-DENSITY_STREAM_STATE density_stream_prepare(density_stream *stream, uint8_t* input_buffer, const uint_fast64_t input_size, uint8_t* output_buffer, const uint_fast64_t output_size, void *(*mem_alloc)(size_t), void (*mem_free)(void *));
+DENSITY_STREAM_STATE density_stream_prepare(density_stream *stream, void *(*mem_alloc)(size_t), void (*mem_free)(void *));
 
 /*
  * Initialize compression

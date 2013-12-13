@@ -51,8 +51,8 @@ DENSITY_FORCE_INLINE void density_mandala_encode_write_to_signature(density_mand
 #endif
 }
 
-DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_prepare_new_block(density_byte_buffer *restrict out, density_mandala_encode_state *restrict state, const uint_fast32_t minimumLookahead) {
-    if (out->position + minimumLookahead > out->size)
+DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_prepare_new_block(density_memory_location *restrict out, density_mandala_encode_state *restrict state, const uint_fast32_t minimumLookahead) {
+    if (minimumLookahead > out->available_bytes)
         return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
 
     switch (state->signaturesCount) {
@@ -82,14 +82,16 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_prepare_
     state->signaturesCount++;
 
     state->shift = 0;
-    state->signature = (density_mandala_signature *) (out->pointer + out->position);
+    state->signature = (density_mandala_signature *) (out->pointer);
     *state->signature = 0;
-    out->position += sizeof(density_mandala_signature);
+
+    out->pointer += sizeof(density_mandala_signature);
+    out->available_bytes -= sizeof(density_mandala_signature);
 
     return DENSITY_KERNEL_ENCODE_STATE_READY;
 }
 
-DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_check_state(density_byte_buffer *restrict out, density_mandala_encode_state *restrict state) {
+DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_check_state(density_memory_location *restrict out, density_mandala_encode_state *restrict state) {
     DENSITY_KERNEL_ENCODE_STATE returnState;
 
     switch (state->shift) {
@@ -106,7 +108,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_check_st
     return DENSITY_KERNEL_ENCODE_STATE_READY;
 }
 
-DENSITY_FORCE_INLINE void density_mandala_encode_kernel(density_byte_buffer *restrict out, uint32_t *restrict hash, const uint32_t chunk, density_mandala_encode_state *restrict state) {
+DENSITY_FORCE_INLINE void density_mandala_encode_kernel(density_memory_location *restrict out, uint32_t *restrict hash, const uint32_t chunk, density_mandala_encode_state *restrict state) {
     DENSITY_MANDALA_HASH_ALGORITHM(*hash, DENSITY_LITTLE_ENDIAN_32(chunk));
     uint32_t *predictedChunk = &(state->dictionary.prediction_entries[state->lastHash].next_chunk_prediction);
 
@@ -117,19 +119,22 @@ DENSITY_FORCE_INLINE void density_mandala_encode_kernel(density_byte_buffer *res
             uint32_t *found_b = &found->chunk_b;
             if (*found_b ^ chunk) {
                 density_mandala_encode_write_to_signature(state, DENSITY_MANDALA_SIGNATURE_FLAG_CHUNK);
-                *(uint32_t *) (out->pointer + out->position) = chunk;
-                out->position += sizeof(uint32_t);
+                *(uint32_t *) (out->pointer) = chunk;
+                out->pointer += sizeof(uint32_t);
+                out->available_bytes -= sizeof(uint32_t);
             } else {
                 density_mandala_encode_write_to_signature(state, DENSITY_MANDALA_SIGNATURE_FLAG_MAP_B);
-                *(uint16_t *) (out->pointer + out->position) = DENSITY_LITTLE_ENDIAN_16(*hash);
-                out->position += sizeof(uint16_t);
+                *(uint16_t *) (out->pointer) = DENSITY_LITTLE_ENDIAN_16(*hash);
+                out->pointer += sizeof(uint16_t);
+                out->available_bytes -= sizeof(uint16_t);
             }
             *found_b = *found_a;
             *found_a = chunk;
         } else {
             //density_mandala_encode_write_to_signature(state, DENSITY_MANDALA_SIGNATURE_FLAG_MAP_A);
-            *(uint16_t *) (out->pointer + out->position) = DENSITY_LITTLE_ENDIAN_16(*hash);
-            out->position += sizeof(uint16_t);
+            *(uint16_t *) (out->pointer) = DENSITY_LITTLE_ENDIAN_16(*hash);
+            out->pointer += sizeof(uint16_t);
+            out->available_bytes -= sizeof(uint16_t);
         }
         *predictedChunk = chunk;
     } else {
@@ -140,8 +145,8 @@ DENSITY_FORCE_INLINE void density_mandala_encode_kernel(density_byte_buffer *res
     state->shift += 2;
 }
 
-DENSITY_FORCE_INLINE void density_mandala_encode_process_chunk(uint64_t *chunk, density_byte_buffer *restrict in, density_byte_buffer *restrict out, uint32_t *restrict hash, density_mandala_encode_state *restrict state) {
-    *chunk = *(uint64_t *) (in->pointer + in->position);
+DENSITY_FORCE_INLINE void density_mandala_encode_process_chunk(uint64_t *chunk, density_memory_location *restrict in, density_memory_location *restrict out, uint32_t *restrict hash, density_mandala_encode_state *restrict state) {
+    *chunk = *(uint64_t *) (in->pointer);
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     density_mandala_encode_kernel(out, hash, (uint32_t) (*chunk & 0xFFFFFFFF), state);
 #endif
@@ -149,20 +154,22 @@ DENSITY_FORCE_INLINE void density_mandala_encode_process_chunk(uint64_t *chunk, 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
     density_mandala_encode_kernel(out, hash, (uint32_t) (*chunk & 0xFFFFFFFF), state);
 #endif
-    in->position += sizeof(uint64_t);
+    in->pointer += sizeof(uint64_t);
+    in->available_bytes -= sizeof(uint64_t);
 }
 
-DENSITY_FORCE_INLINE void density_mandala_encode_process_span(uint64_t *chunk, density_byte_buffer *restrict in, density_byte_buffer *restrict out, uint32_t *restrict hash, density_mandala_encode_state *restrict state) {
+DENSITY_FORCE_INLINE void density_mandala_encode_process_span(uint64_t *chunk, density_memory_location *restrict in, density_memory_location *restrict out, uint32_t *restrict hash, density_mandala_encode_state *restrict state) {
     density_mandala_encode_process_chunk(chunk, in, out, hash, state);
     density_mandala_encode_process_chunk(chunk, in, out, hash, state);
     density_mandala_encode_process_chunk(chunk, in, out, hash, state);
     density_mandala_encode_process_chunk(chunk, in, out, hash, state);
 }
 
-DENSITY_FORCE_INLINE density_bool density_mandala_encode_attempt_copy(density_byte_buffer *restrict out, density_byte *restrict origin, const uint_fast32_t count) {
-    if (out->position + count <= out->size) {
-        memcpy(out->pointer + out->position, origin, count);
-        out->position += count;
+DENSITY_FORCE_INLINE density_bool density_mandala_encode_attempt_copy(density_memory_location *restrict out, density_byte *restrict origin, const uint_fast32_t count) {
+    if (count <= out->available_bytes) {
+        memcpy(out->pointer, origin, count);
+        out->pointer += count;
+        out->available_bytes -= count;
         return false;
     }
     return true;
@@ -182,7 +189,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_init(den
     return DENSITY_KERNEL_ENCODE_STATE_READY;
 }
 
-DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_process(density_byte_buffer *restrict in, density_byte_buffer *restrict out, density_mandala_encode_state *restrict state, const density_bool flush) {
+DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_process(density_memory_location *restrict in, density_memory_location *restrict out, density_mandala_encode_state *restrict state, const density_bool flush) {
     DENSITY_KERNEL_ENCODE_STATE returnState;
     uint32_t hash;
     uint_fast64_t remaining;

@@ -76,13 +76,13 @@ typedef struct {
 
     void *kernelEncodeState;
     DENSITY_KERNEL_ENCODE_STATE (*kernelEncodeInit)(void*);
-    DENSITY_KERNEL_ENCODE_STATE (*kernelEncodeProcess)(uint8_t*, uint_fast64_t*, uint8_t*, uint_fast64_t*, void*, const density_bool);
+    DENSITY_KERNEL_ENCODE_STATE (*kernelEncodeProcess)(density_memory_location*, density_memory_location*, void*, const density_bool);
     DENSITY_KERNEL_ENCODE_STATE (*kernelEncodeFinish)(void*);
 } density_block_encode_state;
 #pragma pack(pop)
 
-DENSITY_BLOCK_ENCODE_STATE density_block_encode_init(density_block_encode_state *, const DENSITY_BLOCK_MODE, const DENSITY_BLOCK_TYPE, void*, DENSITY_KERNEL_ENCODE_STATE (*)(void*), DENSITY_KERNEL_ENCODE_STATE (*)(density_byte_buffer *, density_byte_buffer *, void*, const density_bool), DENSITY_KERNEL_ENCODE_STATE (*)(void*));
-DENSITY_BLOCK_ENCODE_STATE density_block_encode_process(uint8_t*, uint_fast64_t*, uint8_t*, uint_fast64_t*, density_block_encode_state *, const density_bool);
+DENSITY_BLOCK_ENCODE_STATE density_block_encode_init(density_block_encode_state *, const DENSITY_BLOCK_MODE, const DENSITY_BLOCK_TYPE, void*, DENSITY_KERNEL_ENCODE_STATE (*)(void*), DENSITY_KERNEL_ENCODE_STATE (*)(density_memory_location *, density_memory_location *, void*, const density_bool), DENSITY_KERNEL_ENCODE_STATE (*)(void*));
+DENSITY_BLOCK_ENCODE_STATE density_block_encode_process(density_memory_location*, density_memory_location*, density_block_encode_state *, const density_bool);
 DENSITY_BLOCK_ENCODE_STATE density_block_encode_finish(density_block_encode_state *);
 
 #endif

@@ -35,6 +35,7 @@
 
 #include "globals.h"
 #include "byte_buffer.h"
+#include "density_api.h"
 
 #pragma pack(push)
 #pragma pack(4)
@@ -43,7 +44,7 @@ typedef struct {
 } density_block_footer;
 #pragma pack(pop)
 
-uint_fast32_t density_block_footer_read(density_byte_buffer*, density_block_footer*);
-uint_fast32_t density_block_footer_write(density_byte_buffer*, const uint_fast32_t);
+uint_fast32_t density_block_footer_read(density_memory_location*, density_block_footer*);
+uint_fast32_t density_block_footer_write(density_memory_location*, const uint_fast32_t);
 
 #endif

@@ -43,8 +43,8 @@ DENSITY_FORCE_INLINE DENSITY_BUFFERS_STATE density_buffers_translate_state(DENSI
     }
 }
 
-DENSITY_FORCE_INLINE DENSITY_BUFFERS_STATE density_buffers_max_compressed_length(uint_fast64_t *result, uint_fast64_t initialLength, const DENSITY_COMPRESSION_MODE compressionMode) {
-    *result = density_metadata_max_compressed_length(initialLength, compressionMode, true);
+DENSITY_FORCE_INLINE DENSITY_BUFFERS_STATE density_buffers_max_compressed_length(uint_fast64_t * restrict result, uint_fast64_t initialLength, const DENSITY_COMPRESSION_MODE compressionMode) {
+    *result = density_metadata_max_compressed_length(initialLength, compressionMode, DENSITY_ENCODE_OUTPUT_TYPE_DEFAULT);
 
     return DENSITY_BUFFERS_STATE_OK;
 }
@@ -58,7 +58,7 @@ DENSITY_FORCE_INLINE DENSITY_BUFFERS_STATE density_buffers_compress(uint_fast64_
     else
         stream = malloc(sizeof(density_stream));
 
-    if ((returnState = density_stream_prepare(stream, in, inSize, out, outSize, mem_alloc, mem_free)))
+    if ((returnState = density_stream_prepare(stream, mem_alloc, mem_free)))
         return density_buffers_translate_state(returnState);
 
     if ((returnState = density_stream_compress_init(stream, compressionMode, outputType, blockType)))
@@ -90,7 +90,7 @@ DENSITY_BUFFERS_STATE density_buffers_decompress(uint_fast64_t *restrict written
     else
         stream = malloc(sizeof(density_stream));
 
-    if ((returnState = density_stream_prepare(stream, in, inSize, out, outSize, mem_alloc, mem_free)))
+    if ((returnState = density_stream_prepare(stream, mem_alloc, mem_free)))
         return density_buffers_translate_state(returnState);
 
     if ((returnState = density_stream_decompress_init(stream)))

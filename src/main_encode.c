@@ -32,8 +32,8 @@
 
 #include "main_encode.h"
 
-DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_write_header(uint8_t * restrict out, uint_fast64_t* restrict available_out, density_encode_state *restrict state, const DENSITY_COMPRESSION_MODE compressionMode, const DENSITY_BLOCK_TYPE blockType) {
-    if (sizeof(density_main_header) > *available_out)
+DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_write_header(density_memory_location * restrict out, density_encode_state *restrict state, const DENSITY_COMPRESSION_MODE compressionMode, const DENSITY_BLOCK_TYPE blockType) {
+    if (sizeof(density_main_header) > out->available_bytes)
         return DENSITY_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
 
 #if DENSITY_ENABLE_PARALLELIZABLE_DECOMPRESSIBLE_OUTPUT == DENSITY_YES
@@ -49,8 +49,8 @@ DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_write_header(uint8_t * 
     return DENSITY_ENCODE_STATE_READY;
 }
 
-DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_write_footer(uint8_t * restrict out, uint_fast64_t* restrict available_out, density_encode_state *restrict state) {
-    if (sizeof(density_main_footer) > *available_out)
+DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_write_footer(density_memory_location * restrict out, density_encode_state *restrict state) {
+    if (sizeof(density_main_footer) > out->available_bytes)
         return DENSITY_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
 
     state->totalWritten += density_main_footer_write(out);
@@ -60,12 +60,12 @@ DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_write_footer(uint8_t * 
     return DENSITY_ENCODE_STATE_READY;
 }
 
-DENSITY_FORCE_INLINE void density_encode_update_totals(uint_fast64_t* restrict available_in, uint_fast64_t* restrict available_out, density_encode_state *restrict state, const uint_fast64_t availableInBefore, const uint_fast64_t availableOutBefore) {
-    state->totalRead += availableInBefore - *available_in;
-    state->totalWritten += availableOutBefore - *available_out;
+DENSITY_FORCE_INLINE void density_encode_update_totals(density_memory_location* restrict in, density_memory_location* restrict out, density_encode_state *restrict state, const uint_fast64_t availableInBefore, const uint_fast64_t availableOutBefore) {
+    state->totalRead += availableInBefore - in->available_bytes;
+    state->totalWritten += availableOutBefore - out->available_bytes;
 }
 
-DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_init(uint8_t * restrict out, uint_fast64_t* restrict available_out, density_encode_state *restrict state, const DENSITY_COMPRESSION_MODE mode, const DENSITY_ENCODE_OUTPUT_TYPE encodeOutputType, const DENSITY_BLOCK_TYPE blockType) {
+DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_init(density_memory_location * restrict out, density_encode_state *restrict state, const DENSITY_COMPRESSION_MODE mode, const DENSITY_ENCODE_OUTPUT_TYPE encodeOutputType, const DENSITY_BLOCK_TYPE blockType) {
     state->compressionMode = mode;
     state->blockType = blockType;
     state->encodeOutputType = encodeOutputType;
@@ -93,18 +93,18 @@ DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_init(uint8_t * restrict
             state->process = DENSITY_ENCODE_PROCESS_WRITE_BLOCKS;
             return DENSITY_ENCODE_STATE_READY;
         default:
-            return density_encode_write_header(out, available_out, state, mode, blockType);
+            return density_encode_write_header(out, state, mode, blockType);
     }
 }
 
-DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_process(uint8_t * restrict in, uint_fast64_t* restrict available_in, uint8_t * restrict out, uint_fast64_t* restrict available_out, density_encode_state *restrict state, const density_bool flush) {
+DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_process(density_memory_location * restrict in, density_memory_location * restrict out, density_encode_state *restrict state, const density_bool flush) {
     DENSITY_BLOCK_ENCODE_STATE blockEncodeState;
     uint_fast64_t availableInBefore;
     uint_fast64_t availableOutBefore;
 
     while (true) {
-        availableInBefore = *available_in;
-        availableOutBefore = *available_out;
+        availableInBefore = in->available_bytes;
+        availableOutBefore = out->available_bytes;
 
         switch (state->process) {
             case DENSITY_ENCODE_PROCESS_WRITE_BLOCKS:
@@ -133,7 +133,7 @@ DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_process(uint8_t * restr
     }
 }
 
-DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_finish(uint8_t * restrict out, uint_fast64_t* restrict available_out, density_encode_state *restrict state) {
+DENSITY_FORCE_INLINE DENSITY_ENCODE_STATE density_encode_finish(density_memory_location * restrict out, density_encode_state *restrict state) {
     if (state->process ^ DENSITY_ENCODE_PROCESS_WRITE_FOOTER)
         return DENSITY_ENCODE_STATE_ERROR;
 

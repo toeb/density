@@ -35,11 +35,12 @@
 
 #include "globals.h"
 #include "byte_buffer.h"
+#include "density_api.h"
 
 typedef struct {
 } density_main_footer;
 
-uint_fast32_t density_main_footer_read(density_byte_buffer*, density_main_footer*);
-uint_fast32_t density_main_footer_write(density_byte_buffer*);
+uint_fast32_t density_main_footer_read(density_memory_location*, density_main_footer*);
+uint_fast32_t density_main_footer_write(density_memory_location*);
 
 #endif

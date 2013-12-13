@@ -93,7 +93,7 @@ typedef struct {
 #pragma pack(pop)
 
 DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_init(density_chameleon_decode_state *, const density_main_header_parameters, const uint_fast32_t);
-DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_process(density_byte_buffer *, density_byte_buffer *, density_chameleon_decode_state *, const density_bool);
+DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_process(density_memory_location *, density_memory_location *, density_chameleon_decode_state *, const density_bool);
 DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_finish(density_chameleon_decode_state *);
 
 #endif

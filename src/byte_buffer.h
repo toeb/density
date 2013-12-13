@@ -30,7 +30,7 @@
  * 11/10/13 12:54
  */
 
-#ifndef DENSITY_BYTE_BUFFER_H
+/*#ifndef DENSITY_BYTE_BUFFER_H
 #define DENSITY_BYTE_BUFFER_H
 
 #include "globals.h"
@@ -41,4 +41,4 @@
 void density_byte_buffer_encapsulate(density_byte_buffer *, density_byte*, const uint_fast64_t);
 void density_byte_buffer_rewind(density_byte_buffer *);
 
-#endif
+#endif*/

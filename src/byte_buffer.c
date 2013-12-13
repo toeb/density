@@ -30,7 +30,7 @@
  * 11/10/13 17:57
  */
 
-#include "byte_buffer.h"
+/*#include "byte_buffer.h"
 
 DENSITY_FORCE_INLINE void density_byte_buffer_encapsulate_with_position(density_byte_buffer * restrict buffer, density_byte* restrict pointer, const uint_fast64_t position, const uint_fast64_t size) {
     buffer->pointer = pointer;
@@ -44,4 +44,4 @@ DENSITY_FORCE_INLINE void density_byte_buffer_encapsulate(density_byte_buffer * 
 
 DENSITY_FORCE_INLINE void density_byte_buffer_rewind(density_byte_buffer * buffer) {
     buffer->position = 0;
-}
+}                    */

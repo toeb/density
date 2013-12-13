@@ -32,18 +32,20 @@
 
 #include "block_footer.h"
 
-DENSITY_FORCE_INLINE uint_fast32_t density_block_footer_read(density_byte_buffer *restrict in, density_block_footer *restrict blockFooter) {
-    blockFooter->hashsum = *(uint32_t *) (in->pointer + in->position);
+DENSITY_FORCE_INLINE uint_fast32_t density_block_footer_read(density_memory_location *restrict in, density_block_footer *restrict blockFooter) {
+    blockFooter->hashsum = *(uint32_t *) in->pointer;
 
-    in->position += sizeof(density_block_footer);
+    in->pointer += sizeof(density_block_footer);
+    in->available_bytes -= sizeof(density_block_footer);
 
     return sizeof(density_block_footer);
 }
 
-DENSITY_FORCE_INLINE uint_fast32_t density_block_footer_write(density_byte_buffer *out, const uint_fast32_t hashsum) {
-    *(uint32_t *) (out->pointer + out->position) = DENSITY_LITTLE_ENDIAN_32(hashsum);
+DENSITY_FORCE_INLINE uint_fast32_t density_block_footer_write(density_memory_location *out, const uint_fast32_t hashsum) {
+    *(uint32_t *) out->pointer = DENSITY_LITTLE_ENDIAN_32(hashsum);
 
-    out->position += sizeof(density_block_footer);
+    out->pointer += sizeof(density_block_footer);
+    out->available_bytes -= sizeof(density_block_footer);
 
     return sizeof(density_block_footer);
 }
