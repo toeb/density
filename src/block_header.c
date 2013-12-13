@@ -32,14 +32,14 @@
 
 #include "block_header.h"
 
-DENSITY_FORCE_INLINE uint_fast32_t density_block_header_read(density_byte_buffer *restrict in, density_block_header *restrict blockHeader) {
-    in->position += sizeof(density_block_header);
+DENSITY_FORCE_INLINE uint_fast32_t density_block_header_read(uint8_t** restrict in, uint_fast64_t * restrict available_in, density_block_header *restrict blockHeader) {
+    *in += sizeof(density_block_header);
 
     return sizeof(density_block_header);
 }
 
-DENSITY_FORCE_INLINE uint_fast32_t density_block_header_write(density_byte_buffer *out) {
-    out->position += sizeof(density_block_header);
+DENSITY_FORCE_INLINE uint_fast32_t density_block_header_write(uint8_t** restrict out, uint_fast64_t * restrict available_out) {
+    *out += sizeof(density_block_header);
 
     return sizeof(density_block_header);
 }

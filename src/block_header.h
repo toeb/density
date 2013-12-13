@@ -45,7 +45,7 @@ typedef struct {
 } density_block_header;
 #pragma pack(pop)
 
-uint_fast32_t density_block_header_read(density_byte_buffer*, density_block_header*);
-uint_fast32_t density_block_header_write(density_byte_buffer*);
+uint_fast32_t density_block_header_read(uint8_t*, uint_fast64_t *, density_block_header*);
+uint_fast32_t density_block_header_write(uint8_t*, uint_fast64_t *);
 
 #endif

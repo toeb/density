@@ -110,17 +110,19 @@ typedef struct {
     density_main_header_parameters parameters;
 } density_main_header;
 
-typedef struct {
+/*typedef struct {
     density_byte* pointer;
     uint_fast64_t position;
     uint_fast64_t size;
-} density_byte_buffer;
+} density_byte_buffer;*/
 
 typedef struct {
-    density_byte_buffer in;
+    uint8_t* in;
+    uint_fast64_t* available_in;
     uint_fast64_t* in_total_read;
 
-    density_byte_buffer out;
+    uint8_t* out;
+    uint_fast64_t* available_out;
     uint_fast64_t* out_total_written;
 
     void* internal_state;

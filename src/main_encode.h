@@ -74,8 +74,8 @@ typedef struct {
 } density_encode_state;
 #pragma pack(pop)
 
-DENSITY_ENCODE_STATE density_encode_init(density_byte_buffer *, density_encode_state *, const DENSITY_COMPRESSION_MODE, const DENSITY_ENCODE_OUTPUT_TYPE, const DENSITY_BLOCK_TYPE);
-DENSITY_ENCODE_STATE density_encode_process(density_byte_buffer *, density_byte_buffer *, density_encode_state *, const density_bool);
-DENSITY_ENCODE_STATE density_encode_finish(density_byte_buffer *, density_encode_state *);
+DENSITY_ENCODE_STATE density_encode_init(uint8_t *, uint_fast64_t*, density_encode_state *, const DENSITY_COMPRESSION_MODE, const DENSITY_ENCODE_OUTPUT_TYPE, const DENSITY_BLOCK_TYPE);
+DENSITY_ENCODE_STATE density_encode_process(uint8_t *, uint_fast64_t*, uint8_t *, uint_fast64_t*, density_encode_state *, const density_bool);
+DENSITY_ENCODE_STATE density_encode_finish(uint8_t *, uint_fast64_t*, density_encode_state *);
 
 #endif
