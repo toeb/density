@@ -1,4 +1,4 @@
-->->/*
+/*
  * Centaurean Density
  * http://www.libssc.net
  *

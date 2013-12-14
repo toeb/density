@@ -117,15 +117,15 @@ typedef struct {
 } density_byte_buffer;*/
 
 typedef struct {
-    density_byte* pointer;
+    density_byte * pointer;
     uint_fast64_t available_bytes;
 } density_memory_location;
 
 typedef struct {
-    density_memory_location* in;
+    density_memory_location in;
     uint_fast64_t* in_total_read;
 
-    density_memory_location* out;
+    density_memory_location out;
     uint_fast64_t* out_total_written;
 
     void* internal_state;

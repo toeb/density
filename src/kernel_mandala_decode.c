@@ -288,7 +288,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_mandala_decode_init(den
 }
 
 DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_mandala_decode_process(density_memory_location *restrict in, density_memory_location *restrict out, density_mandala_decode_state *restrict state, const density_bool flush) {
-    DENSITY_KERNEL_DECODE_STATE returnState;
+    /*DENSITY_KERNEL_DECODE_STATE returnState;
     uint_fast64_t remaining;
     uint_fast64_t limitIn = 0;
     uint_fast64_t limitOut = 0;
@@ -381,7 +381,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_mandala_decode_process(
 
         default:
             return DENSITY_KERNEL_DECODE_STATE_ERROR;
-    }
+    }*/
 
     return DENSITY_KERNEL_DECODE_STATE_READY;
 }
