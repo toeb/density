@@ -52,8 +52,8 @@ DENSITY_FORCE_INLINE DENSITY_STREAM_STATE density_stream_prepare(density_stream 
 }
 
 DENSITY_FORCE_INLINE DENSITY_STREAM_STATE density_stream_check_conformity(density_stream *stream) {
-    if (stream->out.available_bytes < DENSITY_STREAM_MINIMUM_OUT_BUFFER_SIZE)
-        return DENSITY_STREAM_STATE_ERROR_OUTPUT_BUFFER_TOO_SMALL;
+    //if (stream->out.available_bytes < DENSITY_STREAM_MINIMUM_OUT_BUFFER_SIZE)
+    //    return DENSITY_STREAM_STATE_ERROR_OUTPUT_BUFFER_TOO_SMALL;
 
     return DENSITY_STREAM_STATE_READY;
 }
@@ -62,9 +62,9 @@ DENSITY_FORCE_INLINE DENSITY_STREAM_STATE density_stream_compress_init(density_s
     if (((density_stream_state *) stream->internal_state)->process ^ DENSITY_STREAM_PROCESS_PREPARED)
         return DENSITY_STREAM_STATE_ERROR_INVALID_INTERNAL_STATE;
 
-    DENSITY_STREAM_STATE streamState = density_stream_check_conformity(stream);
-    if (streamState)
-        return streamState;
+    //DENSITY_STREAM_STATE streamState = density_stream_check_conformity(stream);
+    // if (streamState)
+    //    return streamState;
 
     DENSITY_ENCODE_STATE encodeState = density_encode_init(&stream->out, &((density_stream_state *) stream->internal_state)->internal_encode_state, compressionMode, outputType, blockType);
     switch (encodeState) {
@@ -92,9 +92,9 @@ DENSITY_FORCE_INLINE DENSITY_STREAM_STATE density_stream_compress(density_stream
     if (((density_stream_state *) stream->internal_state)->process ^ DENSITY_STREAM_PROCESS_COMPRESSION_INITED)
         return DENSITY_STREAM_STATE_ERROR_INVALID_INTERNAL_STATE;
 
-    DENSITY_STREAM_STATE streamState = density_stream_check_conformity(stream);
-    if (streamState)
-        return streamState;
+    //DENSITY_STREAM_STATE streamState = density_stream_check_conformity(stream);
+    // if (streamState)
+    //    return streamState;
 
     //if (!flush) if (stream->in.size & 0x1F)
     //    return DENSITY_STREAM_STATE_ERROR_INPUT_BUFFER_SIZE_NOT_MULTIPLE_OF_32;
