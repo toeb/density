@@ -50,13 +50,14 @@
 #include "kernel_encode.h"
 #include "density_api.h"
 
-#define DENSITY_CHAMELEON_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD             (sizeof(density_chameleon_signature) + sizeof(uint32_t) * 8 * sizeof(density_chameleon_signature))
+#define DENSITY_CHAMELEON_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD             (sizeof(density_chameleon_signature) + sizeof(uint32_t) * bitsizeof(density_chameleon_signature))
 
 typedef enum {
-    DENSITY_CHAMELEON_ENCODE_PROCESS_CHECK_STATE,
+    //DENSITY_CHAMELEON_ENCODE_PROCESS_CHECK_STATE,
     DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK,
+    DENSITY_CHAMELEON_ENCODE_ACCUMULATE_DATA,
     DENSITY_CHAMELEON_ENCODE_PROCESS_DATA,
-    DENSITY_CHAMELEON_ENCODE_PROCESS_FINISH
+    DENSITY_CHAMELEON_ENCODE_FLUSH_ACCUMULATED_DATA,
 } DENSITY_CHAMELEON_ENCODE_PROCESS;
 
 #pragma pack(push)
@@ -72,6 +73,9 @@ typedef struct {
     density_chameleon_signature * signature;
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;
+
+    density_byte partialInputBuffer[32];
+    density_memory_location partialInput;
 
     density_chameleon_dictionary dictionary;
 } density_chameleon_encode_state;

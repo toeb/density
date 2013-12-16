@@ -43,8 +43,6 @@
 #include "kernel_chameleon.h"
 #include "kernel_mandala.h"
 
-#define bitsizeof(x) (8 * sizeof(x))
-
 uint_fast64_t density_metadata_main_structure_overhead(const DENSITY_ENCODE_OUTPUT_TYPE);
 uint_fast64_t density_metadata_max_block_structure_overhead(const uint_fast64_t, const DENSITY_COMPRESSION_MODE);
 uint_fast64_t density_metadata_max_compressed_length(const uint_fast64_t, const DENSITY_COMPRESSION_MODE, const DENSITY_ENCODE_OUTPUT_TYPE);
