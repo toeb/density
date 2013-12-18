@@ -44,9 +44,9 @@
 
 DENSITY_FORCE_INLINE void density_chameleon_encode_write_to_signature(density_chameleon_encode_state *state) {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    *(state->signature) |= ((uint64_t) 1) << state->shift;
+    *(state->signature) |= ((uint64_t) DENSITY_CHAMELEON_SIGNATURE_FLAG_MAP) << state->shift;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    *(state->signature) |= ((uint64_t) 1) << ((56 - (state->shift & ~0x7)) + (state->shift & 0x7));
+    *(state->signature) |= ((uint64_t) DENSITY_CHAMELEON_SIGNATURE_FLAG_MAP) << ((56 - (state->shift & ~0x7)) + (state->shift & 0x7));
 #endif
 }
 

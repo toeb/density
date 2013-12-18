@@ -57,6 +57,11 @@
 #define DENSITY_CHAMELEON_HASH_ALGORITHM(hash32, value32)                   hash32 = value32 * DENSITY_CHAMELEON_HASH_MULTIPLIER;\
                                                                             hash32 = (hash32 >> (32 - DENSITY_CHAMELEON_HASH_BITS));
 
+typedef enum {
+    DENSITY_CHAMELEON_SIGNATURE_FLAG_CHUNK = 0x0,
+    DENSITY_CHAMELEON_SIGNATURE_FLAG_MAP = 0x1,
+} DENSITY_CHAMELEON_SIGNATURE_FLAG;
+
 typedef uint64_t                                                            density_chameleon_signature;
 
 #endif
