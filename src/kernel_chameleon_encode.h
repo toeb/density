@@ -51,6 +51,7 @@
 #include "density_api.h"
 
 #define DENSITY_CHAMELEON_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD             (sizeof(density_chameleon_signature) + sizeof(uint32_t) * bitsizeof(density_chameleon_signature))
+#define DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE                    (4 * 4 * sizeof(uint64_t))
 
 typedef enum {
     DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK,
@@ -72,7 +73,7 @@ typedef struct {
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;
 
-    density_byte partialInputBuffer[128];
+    density_byte partialInputBuffer[DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE];
     density_memory_location partialInput;
 
     density_chameleon_dictionary dictionary;

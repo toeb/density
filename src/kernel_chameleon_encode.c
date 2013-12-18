@@ -187,11 +187,11 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
 
         case DENSITY_CHAMELEON_ENCODE_PROCESS_CONTINUE:
             if (state->partialInput.available_bytes) {
-                uint_fast64_t missingBytes = 128 - state->partialInput.available_bytes;
+                uint_fast64_t missingBytes = DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE - state->partialInput.available_bytes;
                 if (in->available_bytes > missingBytes) {
                     memcpy(state->partialInput.pointer + state->partialInput.available_bytes, in->pointer, missingBytes);
 
-                    state->partialInput.available_bytes = 128;
+                    state->partialInput.available_bytes = DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE;
 
                     in->pointer += missingBytes;
                     in->available_bytes -= missingBytes;
@@ -224,7 +224,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
                 }
             } else {
                 zero_bytes_accumulated:
-                limit = in->available_bytes & 127;
+                limit = in->available_bytes & (DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE - 1);
                 while (in->available_bytes != limit) {
                     if ((returnState = density_chameleon_encode_check_state(out, state)))
                         return returnState;
