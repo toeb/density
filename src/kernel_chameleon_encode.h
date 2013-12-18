@@ -76,7 +76,7 @@ typedef struct {
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;
 
-    density_byte partialInputBuffer[32];
+    density_byte partialInputBuffer[128];
     density_memory_location partialInput;
 
     density_chameleon_dictionary dictionary;
