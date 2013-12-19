@@ -50,15 +50,12 @@
 #include "kernel_decode.h"
 #include "density_api.h"
 
-#define DENSITY_CHAMELEON_DECODE_MINIMUM_INPUT_LOOKAHEAD               (sizeof(density_chameleon_signature) + sizeof(uint32_t) * 8 * sizeof(density_chameleon_signature))
 #define DENSITY_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD              (sizeof(uint32_t) * 8 * sizeof(density_chameleon_signature))
+#define DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE                     (sizeof(density_chameleon_signature) + bitsizeof(density_chameleon_signature) * sizeof(uint32_t))
 
 typedef enum {
-    DENSITY_CHAMELEON_DECODE_PROCESS_SIGNATURES_AND_DATA_FAST,
-    DENSITY_CHAMELEON_DECODE_PROCESS_SIGNATURE_SAFE,
-    DENSITY_CHAMELEON_DECODE_PROCESS_DATA_FAST,
-    DENSITY_CHAMELEON_DECODE_PROCESS_DATA_SAFE,
-    DENSITY_CHAMELEON_DECODE_PROCESS_FINISH
+    DENSITY_CHAMELEON_DECODE_PROCESS_CONTINUE,
+    DENSITY_CHAMELEON_DECODE_PROCESS_FLUSH,
 } DENSITY_CHAMELEON_DECODE_PROCESS;
 
 #pragma pack(push)
@@ -76,7 +73,7 @@ typedef struct {
 
     uint_fast64_t endDataOverhead;
 
-    union {
+    /*union {
         density_byte as_bytes[8];
         uint64_t as_uint64_t;
     } partialSignature;
@@ -86,7 +83,10 @@ typedef struct {
     } partialUncompressedChunk;
 
     uint_fast64_t signatureBytes;
-    uint_fast64_t uncompressedChunkBytes;
+    uint_fast64_t uncompressedChunkBytes;*/
+
+    density_byte partialInputBuffer[DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE];
+    density_memory_location partialInput;
 
     density_chameleon_dictionary dictionary;
 } density_chameleon_decode_state;
