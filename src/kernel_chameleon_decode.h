@@ -50,7 +50,7 @@
 #include "kernel_decode.h"
 #include "density_api.h"
 
-#define DENSITY_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD              (sizeof(uint32_t) * 8 * sizeof(density_chameleon_signature))
+#define DENSITY_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD              (bitsizeof(density_chameleon_signature) * sizeof(uint32_t))
 #define DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE                     (sizeof(density_chameleon_signature) + bitsizeof(density_chameleon_signature) * sizeof(uint32_t))
 
 typedef enum {
@@ -73,19 +73,7 @@ typedef struct {
 
     uint_fast64_t endDataOverhead;
 
-    /*union {
-        density_byte as_bytes[8];
-        uint64_t as_uint64_t;
-    } partialSignature;
-    union {
-        density_byte as_bytes[4];
-        uint32_t as_uint32_t;
-    } partialUncompressedChunk;
-
-    uint_fast64_t signatureBytes;
-    uint_fast64_t uncompressedChunkBytes;*/
-
-    density_byte partialInputBuffer[DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE];
+    density_byte partialInputBuffer[DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE << 1];
     density_memory_location partialInput;
 
     density_chameleon_dictionary dictionary;
