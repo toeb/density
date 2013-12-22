@@ -174,7 +174,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_init(d
 }
 
 DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_process(density_memory_location *restrict in, density_memory_location *restrict out, density_chameleon_encode_state *restrict state, const density_bool flush) {
-    /*DENSITY_KERNEL_ENCODE_STATE returnState;
+    DENSITY_KERNEL_ENCODE_STATE returnState;
     uint32_t hash;
     uint_fast64_t remaining;
     uint64_t chunk;
@@ -254,9 +254,9 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
             return DENSITY_KERNEL_ENCODE_STATE_ERROR;
     }
 
-    return DENSITY_KERNEL_ENCODE_STATE_READY;*/
+    return DENSITY_KERNEL_ENCODE_STATE_READY;
 
-    DENSITY_KERNEL_ENCODE_STATE returnState;
+    /*DENSITY_KERNEL_ENCODE_STATE returnState;
     uint32_t hash;
     uint64_t chunk;
     uint_fast64_t limit;
@@ -359,7 +359,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
             state->partialInput.available_bytes = 0;
             state->process = DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK;
             return DENSITY_KERNEL_ENCODE_STATE_FINISHED;
-    }
+    }*/
 }
 
 DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_finish(density_chameleon_encode_state *state) {
