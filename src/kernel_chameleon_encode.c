@@ -193,9 +193,9 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
                 if ((returnState = density_chameleon_encode_check_state(out, state)))
                     return returnState;
                 density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
+                /*density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
                 density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
-                density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
-                density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
+                density_chameleon_encode_process_span(&chunk, in, out, &hash, state);*/
             }
             state->process = DENSITY_CHAMELEON_ENCODE_PROCESS_ACCUMULATE;
             goto accumulate_remaining_bytes;
@@ -213,9 +213,9 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
                 if ((returnState = density_chameleon_encode_check_state(out, state)))
                     return returnState;
                 density_chameleon_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
+                /*density_chameleon_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
                 density_chameleon_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
-                density_chameleon_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
-                density_chameleon_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
+                density_chameleon_encode_process_span(&chunk, &state->partialInput, out, &hash, state);*/
 
                 state->partialInput.pointer = state->partialInputBuffer;
                 state->partialInput.available_bytes = 0;
