@@ -204,12 +204,8 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
                 density_byte* outBefore = out->pointer;
                 density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
                 density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
-                density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
-                density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
-                density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
-                density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
-                density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
-                density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
+                //density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
+                //density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
                 in->available_bytes -= DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE;
                 out->available_bytes -= (out->pointer - outBefore);
 
@@ -223,12 +219,8 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
                     }
                 }
 
-                if ((returnState = density_chameleon_encode_prepare_new_block(out, state, DENSITY_CHAMELEON_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD))) {
-                    state->process = DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK;
+                if ((returnState = density_chameleon_encode_check_state(out, state)))
                     return returnState;
-                }
-                /*if ((returnState = density_chameleon_encode_check_state(out, state)))
-                    return returnState;*/
             }
 
         case DENSITY_CHAMELEON_ENCODE_PROCESS_FINISH:
