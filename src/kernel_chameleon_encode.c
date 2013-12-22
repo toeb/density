@@ -115,12 +115,12 @@ DENSITY_FORCE_INLINE void density_chameleon_encode_kernel(density_memory_locatio
         found->as_uint32_t = chunk;
         *(uint32_t *) (out->pointer) = chunk;
         out->pointer += sizeof(uint32_t);
-        out->available_bytes -= sizeof(uint32_t);
+        //out->available_bytes -= sizeof(uint32_t);
     } else {
         density_chameleon_encode_write_to_signature(state);
         *(uint16_t *) (out->pointer) = DENSITY_LITTLE_ENDIAN_16(*hash);
         out->pointer += sizeof(uint16_t);
-        out->available_bytes -= sizeof(uint16_t);
+        //out->available_bytes -= sizeof(uint16_t);
     }
 
     state->shift++;
@@ -136,7 +136,7 @@ DENSITY_FORCE_INLINE void density_chameleon_encode_process_chunk(uint64_t *chunk
     density_chameleon_encode_kernel(out, hash, (uint32_t) (*chunk & 0xFFFFFFFF), state);
 #endif
     in->pointer += sizeof(uint64_t);
-    in->available_bytes -= sizeof(uint64_t);
+    //in->available_bytes -= sizeof(uint64_t);
 }
 
 DENSITY_FORCE_INLINE void density_chameleon_encode_process_span(uint64_t *chunk, density_memory_location *restrict in, density_memory_location *restrict out, uint32_t *restrict hash, density_chameleon_encode_state *restrict state) {
@@ -201,7 +201,11 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
             if (in->available_bytes < 4 * sizeof(uint64_t))
                 goto finish;
             while (true) {
+                density_byte* outBefore = out->pointer;
                 density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
+                in->available_bytes -= 4 * sizeof(uint64_t);
+                out->available_bytes -= (out->pointer - outBefore);
+
                 if (in->available_bytes == limit) {
                     if (flush) {
                         state->process = DENSITY_CHAMELEON_ENCODE_PROCESS_FINISH;
