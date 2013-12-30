@@ -43,6 +43,7 @@ DENSITY_FORCE_INLINE uint_fast32_t density_block_mode_marker_read(density_memory
 
 DENSITY_FORCE_INLINE uint_fast32_t density_block_mode_marker_write(density_memory_location *out, const DENSITY_BLOCK_MODE mode) {
     *(out->pointer) = (density_byte) mode;
+    *(out->pointer + 1) = 0x0;
 
     out->pointer += sizeof(density_mode_marker);
     out->available_bytes -= sizeof(density_mode_marker);
