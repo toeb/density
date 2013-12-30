@@ -55,11 +55,10 @@
 
 typedef enum {
     DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK,
-    DENSITY_CHAMELEON_ENCODE_PROCESS_CHECK_STATE,
-    DENSITY_CHAMELEON_ENCODE_PROCESS_DATA,
-    DENSITY_CHAMELEON_ENCODE_PROCESS_FINISH,
+    DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK_BEFORE_PROCESSING_ACCUMULATED,
     DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS,
     DENSITY_CHAMELEON_ENCODE_PROCESS_ACCUMULATE,
+    DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS_ACCUMULATED,
     DENSITY_CHAMELEON_ENCODE_PROCESS_FLUSH,
 } DENSITY_CHAMELEON_ENCODE_PROCESS;
 
@@ -73,7 +72,7 @@ typedef struct {
 #endif
 
     uint_fast32_t shift;
-    density_chameleon_signature * signature;
+    density_chameleon_signature *signature;
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;
 
@@ -85,7 +84,9 @@ typedef struct {
 #pragma pack(pop)
 
 DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_init(density_chameleon_encode_state *);
+
 DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_process(density_memory_location *, density_memory_location *, density_chameleon_encode_state *, const density_bool);
+
 DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_finish(density_chameleon_encode_state *);
 
 #endif
