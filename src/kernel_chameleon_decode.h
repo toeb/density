@@ -50,11 +50,17 @@
 #include "kernel_decode.h"
 #include "density_api.h"
 #include "block_mode_marker.h"
+#include "block_header.h"
 
 #define DENSITY_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD              (bitsizeof(density_chameleon_signature) * sizeof(uint32_t))
-#define DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE                     (sizeof(density_mode_marker) + sizeof(density_chameleon_signature) + bitsizeof(density_chameleon_signature) * sizeof(uint32_t))
+#define DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE                     (sizeof(density_block_header) + sizeof(density_mode_marker) + sizeof(density_chameleon_signature) + bitsizeof(density_chameleon_signature) * sizeof(uint32_t))
 
 typedef enum {
+    DENSITY_CHAMELEON_DECODE_PROCESS_PREPARE_NEW_BLOCK_BEFORE_PROCESSING_ACCUMULATED,
+    DENSITY_CHAMELEON_DECODE_PROCESS_PREPARE_NEW_BLOCK,
+    DENSITY_CHAMELEON_DECODE_PROCESS_COMPRESS_ACCUMULATED,
+    DENSITY_CHAMELEON_DECODE_PROCESS_DECOMPRESS,
+    DENSITY_CHAMELEON_DECODE_PROCESS_ACCUMULATE,
     DENSITY_CHAMELEON_DECODE_PROCESS_CONTINUE,
     DENSITY_CHAMELEON_DECODE_PROCESS_FLUSH,
 } DENSITY_CHAMELEON_DECODE_PROCESS;

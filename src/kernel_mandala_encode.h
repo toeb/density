@@ -51,13 +51,16 @@
 #include "kernel_encode.h"
 #include "density_api.h"
 
-#define DENSITY_MANDALA_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD             (sizeof(density_mandala_signature) + sizeof(uint32_t) * 4 * sizeof(density_mandala_signature))
+#define DENSITY_MANDALA_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD             (2 * (sizeof(density_mandala_signature) + sizeof(uint32_t) * 4 * sizeof(density_mandala_signature)))
+#define DENSITY_MANDALA_ENCODE_PROCESS_UNIT_SIZE                    (2 * 4 * sizeof(uint64_t))
 
 typedef enum {
-    DENSITY_MANDALA_ENCODE_PROCESS_CHECK_STATE,
     DENSITY_MANDALA_ENCODE_PROCESS_PREPARE_NEW_BLOCK,
-    DENSITY_MANDALA_ENCODE_PROCESS_DATA,
-    DENSITY_MANDALA_ENCODE_PROCESS_FINISH
+    DENSITY_MANDALA_ENCODE_PROCESS_PREPARE_NEW_BLOCK_BEFORE_PROCESSING_ACCUMULATED,
+    DENSITY_MANDALA_ENCODE_PROCESS_COMPRESS,
+    DENSITY_MANDALA_ENCODE_PROCESS_ACCUMULATE,
+    DENSITY_MANDALA_ENCODE_PROCESS_COMPRESS_ACCUMULATED,
+    DENSITY_MANDALA_ENCODE_PROCESS_FLUSH,
 } DENSITY_MANDALA_ENCODE_PROCESS;
 
 #pragma pack(push)
@@ -73,6 +76,9 @@ typedef struct {
     density_mandala_signature * signature;
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;
+
+    density_byte partialInputBuffer[DENSITY_MANDALA_ENCODE_PROCESS_UNIT_SIZE];
+    density_memory_location partialInput;
 
     uint_fast16_t lastHash;
 

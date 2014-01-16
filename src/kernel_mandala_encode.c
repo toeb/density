@@ -95,7 +95,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_check_st
     DENSITY_KERNEL_ENCODE_STATE returnState;
 
     switch (state->shift) {
-        case 64:
+        case bitsizeof(density_mandala_signature):
             if ((returnState = density_mandala_encode_prepare_new_block(out, state, DENSITY_MANDALA_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD))) {
                 state->process = DENSITY_MANDALA_ENCODE_PROCESS_PREPARE_NEW_BLOCK;
                 return returnState;
@@ -180,6 +180,9 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_init(den
     state->efficiencyChecked = 0;
     density_mandala_dictionary_reset(&state->dictionary);
 
+    state->partialInput.pointer = state->partialInputBuffer;
+    state->partialInput.available_bytes = 0;
+
 #if DENSITY_ENABLE_PARALLELIZABLE_DECOMPRESSIBLE_OUTPUT == DENSITY_YES
     state->resetCycle = DENSITY_DICTIONARY_PREFERRED_RESET_CYCLE - 1;
 #endif
@@ -190,6 +193,125 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_init(den
 }
 
 DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_process(density_memory_location *restrict in, density_memory_location *restrict out, density_mandala_encode_state *restrict state, const density_bool flush) {
+    DENSITY_KERNEL_ENCODE_STATE returnState;
+    uint32_t hash;
+    uint64_t chunk;
+    uint_fast64_t missingBytes;
+    uint_fast64_t copyBytes;
+    uint_fast64_t limit;
+    density_byte *pointerOutBefore;
+
+    switch (state->process) {
+        case DENSITY_MANDALA_ENCODE_PROCESS_PREPARE_NEW_BLOCK_BEFORE_PROCESSING_ACCUMULATED:
+            if ((returnState = density_mandala_encode_prepare_new_block(out, state, DENSITY_MANDALA_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD)))
+                return returnState;
+            state->process = DENSITY_MANDALA_ENCODE_PROCESS_COMPRESS_ACCUMULATED;
+            goto compress_accumulated;
+
+        case DENSITY_MANDALA_ENCODE_PROCESS_PREPARE_NEW_BLOCK:
+            if ((returnState = density_mandala_encode_prepare_new_block(out, state, DENSITY_MANDALA_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD)))
+                return returnState;
+            state->process = DENSITY_MANDALA_ENCODE_PROCESS_COMPRESS;
+
+        case DENSITY_MANDALA_ENCODE_PROCESS_COMPRESS:
+        zero_bytes_accumulated:
+            if (in->available_bytes >= DENSITY_MANDALA_ENCODE_PROCESS_UNIT_SIZE) {
+                limit = in->available_bytes & (DENSITY_MANDALA_ENCODE_PROCESS_UNIT_SIZE - 1);
+                while (true) {
+                    if ((returnState = density_mandala_encode_check_state(out, state)))
+                        return returnState;
+
+                    pointerOutBefore = out->pointer;
+                    density_mandala_encode_process_span(&chunk, in, out, &hash, state);
+                    density_mandala_encode_process_span(&chunk, in, out, &hash, state);
+                    in->available_bytes -= DENSITY_MANDALA_ENCODE_PROCESS_UNIT_SIZE;
+                    out->available_bytes -= (out->pointer - pointerOutBefore);
+
+                    if (in->available_bytes == limit)
+                        break;
+                }
+            }
+            if (in->available_bytes)
+                state->process = DENSITY_MANDALA_ENCODE_PROCESS_ACCUMULATE;
+            else {
+                if (flush) {
+                    state->process = DENSITY_MANDALA_ENCODE_PROCESS_PREPARE_NEW_BLOCK;
+                    return DENSITY_KERNEL_ENCODE_STATE_FINISHED;
+                } else
+                    return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_INPUT_BUFFER;
+            }
+
+        case DENSITY_MANDALA_ENCODE_PROCESS_ACCUMULATE:
+            missingBytes = DENSITY_MANDALA_ENCODE_PROCESS_UNIT_SIZE - state->partialInput.available_bytes;
+            copyBytes = in->available_bytes > missingBytes ? missingBytes : in->available_bytes;
+
+            memcpy(state->partialInput.pointer + state->partialInput.available_bytes, in->pointer, copyBytes);
+            state->partialInput.available_bytes += copyBytes;
+
+            in->pointer += copyBytes;
+            in->available_bytes -= copyBytes;
+
+            if (state->partialInput.available_bytes == DENSITY_MANDALA_ENCODE_PROCESS_UNIT_SIZE)
+                state->process = DENSITY_MANDALA_ENCODE_PROCESS_COMPRESS_ACCUMULATED;
+            else {
+                if (flush) {
+                    state->process = DENSITY_MANDALA_ENCODE_PROCESS_FLUSH;
+                    goto flush_accumulated_data;
+                } else
+                    return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_INPUT_BUFFER;
+            }
+
+        case DENSITY_MANDALA_ENCODE_PROCESS_COMPRESS_ACCUMULATED:
+        compress_accumulated:
+            if ((returnState = density_mandala_encode_check_state(out, state)))
+                return returnState;
+
+            pointerOutBefore = out->pointer;
+            density_mandala_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
+            density_mandala_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
+            state->partialInput.available_bytes = 0;
+            out->available_bytes -= (out->pointer - pointerOutBefore);
+
+            state->partialInput.pointer = state->partialInputBuffer;
+
+            state->process = DENSITY_MANDALA_ENCODE_PROCESS_COMPRESS;
+            goto zero_bytes_accumulated;
+
+        case DENSITY_MANDALA_ENCODE_PROCESS_FLUSH:
+        flush_accumulated_data:
+            while (true) {
+                while (state->shift ^ bitsizeof(density_mandala_signature)) {
+                    if (state->partialInput.available_bytes < sizeof(uint32_t))
+                        goto exit;
+                    else {
+                        if (out->available_bytes < sizeof(uint32_t))
+                            return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
+
+                        pointerOutBefore = out->pointer;
+                        density_mandala_encode_kernel(out, &hash, *(uint32_t *) (state->partialInput.pointer), state);
+                        out->available_bytes -= (out->pointer - pointerOutBefore);
+
+                        state->partialInput.pointer += sizeof(uint32_t);
+                        state->partialInput.available_bytes -= sizeof(uint32_t);
+                    }
+                }
+                if (state->partialInput.available_bytes < sizeof(uint32_t))
+                    goto exit;
+                else if ((returnState = density_mandala_encode_prepare_new_block(out, state, sizeof(density_mandala_signature))))
+                    return returnState;
+            }
+
+        exit:
+            if (state->partialInput.available_bytes) {
+                if (density_mandala_encode_attempt_copy(out, state->partialInput.pointer, (uint32_t) state->partialInput.available_bytes))
+                    return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
+            }
+            state->partialInput.pointer = state->partialInputBuffer; // todo
+            state->partialInput.available_bytes = 0;
+            state->process = DENSITY_MANDALA_ENCODE_PROCESS_PREPARE_NEW_BLOCK;
+            return DENSITY_KERNEL_ENCODE_STATE_FINISHED;
+    }
+
     /*DENSITY_KERNEL_ENCODE_STATE returnState;
     uint32_t hash;
     uint_fast64_t remaining;
