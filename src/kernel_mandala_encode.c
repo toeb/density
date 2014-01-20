@@ -165,6 +165,11 @@ DENSITY_FORCE_INLINE void density_mandala_encode_process_span(uint64_t *chunk, d
     density_mandala_encode_process_chunk(chunk, in, out, hash, state);
 }
 
+DENSITY_FORCE_INLINE void density_mandala_encode_process_unit(uint64_t *chunk, density_memory_location *restrict in, density_memory_location *restrict out, uint32_t *restrict hash, density_mandala_encode_state *restrict state) {
+    density_mandala_encode_process_span(chunk, in, out, hash, state);
+    density_mandala_encode_process_span(chunk, in, out, hash, state);
+}
+
 DENSITY_FORCE_INLINE density_bool density_mandala_encode_attempt_copy(density_memory_location *restrict out, density_byte *restrict origin, const uint_fast32_t count) {
     if (count <= out->available_bytes) {
         memcpy(out->pointer, origin, count);
@@ -222,8 +227,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_process(
                         return returnState;
 
                     pointerOutBefore = out->pointer;
-                    density_mandala_encode_process_span(&chunk, in, out, &hash, state);
-                    density_mandala_encode_process_span(&chunk, in, out, &hash, state);
+                    density_mandala_encode_process_unit(&chunk, in, out, &hash, state);
                     in->available_bytes -= DENSITY_MANDALA_ENCODE_PROCESS_UNIT_SIZE;
                     out->available_bytes -= (out->pointer - pointerOutBefore);
 
@@ -267,8 +271,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_process(
                 return returnState;
 
             pointerOutBefore = out->pointer;
-            density_mandala_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
-            density_mandala_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
+            density_mandala_encode_process_unit(&chunk, &state->partialInput, out, &hash, state);
             state->partialInput.available_bytes = 0;
             out->available_bytes -= (out->pointer - pointerOutBefore);
 
