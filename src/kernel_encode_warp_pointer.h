@@ -30,7 +30,7 @@
  * 21/01/14 21:32
  */
 
-#include <secure/_string.h>
+#include <string.h>
 #include "density_api.h"
 #include "globals.h"
 #include "kernel_encode.h"
@@ -40,47 +40,10 @@ typedef struct {
     uint_fast32_t size;
 } density_kernel_encode_warp_pointer;
 
-DENSITY_FORCE_INLINE density_kernel_encode_warp_pointer *density_kernel_encode_warp_pointer_create(uint_fast32_t size) {
-    density_kernel_encode_warp_pointer *reader = (density_kernel_encode_warp_pointer *) malloc(sizeof(density_kernel_encode_warp_pointer));
-    reader->buffer = (density_memory_location *) malloc(sizeof(density_memory_location));
-    reader->buffer->pointer = (density_byte *) malloc(size * sizeof(density_byte));
-    reader->buffer->available_bytes = size;
-    reader->size = size;
-    return reader;
-}
+density_kernel_encode_warp_pointer *density_kernel_encode_warp_pointer_allocate(uint_fast32_t);
 
-DENSITY_FORCE_INLINE void density_kernel_encode_warp_pointer_delete(density_kernel_encode_warp_pointer *reader) {
-    free(reader->buffer->pointer);
-    free(reader->buffer);
-    free(reader);
-}
+void density_kernel_encode_warp_pointer_free(density_kernel_encode_warp_pointer *);
 
-DENSITY_FORCE_INLINE density_memory_location *density_kernel_encode_warp_pointer_read(density_kernel_encode_warp_pointer *reader, density_memory_location *in, const uint_fast64_t limit) {
-    if (!reader->buffer->available_bytes)
-        reader->buffer->available_bytes = reader->size;
-    if (reader->buffer->available_bytes < reader->size) {
-        if (in->available_bytes < reader->buffer->available_bytes) {
-            memcpy(reader->buffer + (reader->size - reader->buffer->available_bytes), in->pointer, in->available_bytes);
-            reader->buffer->available_bytes -= in->available_bytes;
-            in->pointer += in->available_bytes;
-            in->available_bytes = 0;
-            return NULL;
-        } else {
-            memcpy(reader->buffer + (reader->size - reader->buffer->available_bytes), in->pointer, reader->buffer->available_bytes);
-            reader->buffer->available_bytes = 0;
-            in->pointer += reader->buffer->available_bytes;
-            in->available_bytes -= reader->buffer->available_bytes;
-            return reader->buffer;
-        }
-    } else if (in->available_bytes == limit/*< reader->size*/) {
-        memcpy(reader->buffer + (reader->size - reader->buffer->available_bytes), in->pointer, in->available_bytes);
-        reader->buffer->available_bytes -= in->available_bytes;
-        in->pointer += in->available_bytes;
-        in->available_bytes = 0;
-        return NULL;
-    } else {
-        return in;
-    }
-}
+density_memory_location *density_kernel_encode_warp_pointer_fetch(density_kernel_encode_warp_pointer *, density_memory_location *, const uint_fast64_t);
 
 

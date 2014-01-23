@@ -56,11 +56,7 @@
 
 typedef enum {
     DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK,
-    //DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK_BEFORE_PROCESSING_ACCUMULATED,
     DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS,
-    //DENSITY_CHAMELEON_ENCODE_PROCESS_ACCUMULATE,
-    //DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS_ACCUMULATED,
-    //DENSITY_CHAMELEON_ENCODE_PROCESS_FLUSH,
 } DENSITY_CHAMELEON_ENCODE_PROCESS;
 
 #pragma pack(push)
@@ -77,9 +73,7 @@ typedef struct {
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;
 
-    //density_byte partialInputBuffer[DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE];
-    //density_memory_location partialInput;
-    density_kernel_encode_warp_pointer * reader;
+    density_kernel_encode_warp_pointer *warpPointer;
 
     density_chameleon_dictionary dictionary;
 } density_chameleon_encode_state;
