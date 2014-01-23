@@ -48,10 +48,10 @@ DENSITY_FORCE_INLINE void density_kernel_encode_warp_pointer_free(density_kernel
 }
 
 DENSITY_FORCE_INLINE density_memory_location *density_kernel_encode_warp_pointer_fetch(density_kernel_encode_warp_pointer *encodeWarpPointer, density_memory_location *in, const uint_fast64_t limit) {
-    if (!encodeWarpPointer->buffer->available_bytes)
-        encodeWarpPointer->buffer->available_bytes = encodeWarpPointer->size;
-    if (encodeWarpPointer->buffer->available_bytes < encodeWarpPointer->size) {
-        if (in->available_bytes < encodeWarpPointer->buffer->available_bytes) {
+    if (encodeWarpPointer->buffer->available_bytes != encodeWarpPointer->size) {
+        if (!encodeWarpPointer->buffer->available_bytes)
+            encodeWarpPointer->buffer->available_bytes = encodeWarpPointer->size;
+        else if (in->available_bytes < encodeWarpPointer->buffer->available_bytes) {
             memcpy(encodeWarpPointer->buffer + (encodeWarpPointer->size - encodeWarpPointer->buffer->available_bytes), in->pointer, in->available_bytes);
             encodeWarpPointer->buffer->available_bytes -= in->available_bytes;
             in->pointer += in->available_bytes;
@@ -64,7 +64,8 @@ DENSITY_FORCE_INLINE density_memory_location *density_kernel_encode_warp_pointer
             in->available_bytes -= encodeWarpPointer->buffer->available_bytes;
             return encodeWarpPointer->buffer;
         }
-    } else if (in->available_bytes == limit/*< warpPointer->size*/) {
+    }
+    if (in->available_bytes == limit/*< warpPointer->size*/) {
         memcpy(encodeWarpPointer->buffer + (encodeWarpPointer->size - encodeWarpPointer->buffer->available_bytes), in->pointer, in->available_bytes);
         encodeWarpPointer->buffer->available_bytes -= in->available_bytes;
         in->pointer += in->available_bytes;
