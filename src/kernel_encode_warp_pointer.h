@@ -35,15 +35,10 @@
 #include "globals.h"
 #include "kernel_encode.h"
 
-typedef struct {
-    density_memory_location *buffer;
-    uint_fast32_t size;
-} density_kernel_encode_warp_pointer;
+density_memory_location *density_kernel_encode_warp_pointer_allocate_sub_buffer(uint_fast32_t const);
 
-density_kernel_encode_warp_pointer *density_kernel_encode_warp_pointer_allocate(uint_fast32_t);
+void density_kernel_encode_warp_pointer_free_sub_buffer(density_memory_location *);
 
-void density_kernel_encode_warp_pointer_free(density_kernel_encode_warp_pointer *);
-
-density_memory_location *density_kernel_encode_warp_pointer_fetch(density_kernel_encode_warp_pointer *, density_memory_location *, const uint_fast64_t);
+density_memory_location *density_kernel_encode_warp_pointer_fetch(density_memory_location *, density_memory_location *, const uint_fast64_t, const uint_fast64_t);
 
 

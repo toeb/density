@@ -73,7 +73,7 @@ typedef struct {
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;
 
-    density_kernel_encode_warp_pointer *warpPointer;
+    density_memory_location *subBuffer;
 
     density_chameleon_dictionary dictionary;
 } density_chameleon_encode_state;

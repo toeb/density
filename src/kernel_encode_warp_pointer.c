@@ -31,43 +31,42 @@
  */
 
 #include "kernel_encode_warp_pointer.h"
+#include "kernel_chameleon_encode.h"
 
-DENSITY_FORCE_INLINE density_kernel_encode_warp_pointer *density_kernel_encode_warp_pointer_allocate(uint_fast32_t size) {
-    density_kernel_encode_warp_pointer *reader = (density_kernel_encode_warp_pointer *) malloc(sizeof(density_kernel_encode_warp_pointer));
-    reader->buffer = (density_memory_location *) malloc(sizeof(density_memory_location));
-    reader->buffer->pointer = (density_byte *) malloc(size * sizeof(density_byte));
-    reader->buffer->available_bytes = size;
-    reader->size = size;
-    return reader;
+DENSITY_FORCE_INLINE density_memory_location *density_kernel_encode_warp_pointer_allocate_sub_buffer(const uint_fast32_t size) {
+    density_memory_location* subBuffer = (density_memory_location *) malloc(sizeof(density_memory_location));
+    subBuffer->pointer = (density_byte *) malloc(size * sizeof(density_byte));
+    subBuffer->available_bytes = size;
+    //reader->size = size;
+    return subBuffer;
 }
 
-DENSITY_FORCE_INLINE void density_kernel_encode_warp_pointer_free(density_kernel_encode_warp_pointer *reader) {
-    free(reader->buffer->pointer);
-    free(reader->buffer);
-    free(reader);
+DENSITY_FORCE_INLINE void density_kernel_encode_warp_pointer_free_sub_buffer(density_memory_location *subBuffer) {
+    free(subBuffer->pointer);
+    free(subBuffer);
 }
 
-DENSITY_FORCE_INLINE density_memory_location *density_kernel_encode_warp_pointer_fetch(density_kernel_encode_warp_pointer *encodeWarpPointer, density_memory_location *in, const uint_fast64_t limit) {
-    if (encodeWarpPointer->buffer->available_bytes != encodeWarpPointer->size) {
-        if (!encodeWarpPointer->buffer->available_bytes)
-            encodeWarpPointer->buffer->available_bytes = encodeWarpPointer->size;
-        else if (in->available_bytes < encodeWarpPointer->buffer->available_bytes) {
-            memcpy(encodeWarpPointer->buffer + (encodeWarpPointer->size - encodeWarpPointer->buffer->available_bytes), in->pointer, in->available_bytes);
-            encodeWarpPointer->buffer->available_bytes -= in->available_bytes;
+DENSITY_FORCE_INLINE density_memory_location *density_kernel_encode_warp_pointer_fetch(density_memory_location *subBuffer, density_memory_location *in, const uint_fast64_t limit, const uint_fast64_t resetSize) {
+    if (subBuffer->available_bytes != resetSize) {
+        if (!subBuffer->available_bytes)
+            subBuffer->available_bytes = resetSize;
+        else if (in->available_bytes < subBuffer->available_bytes) {
+            memcpy(subBuffer + (resetSize - subBuffer->available_bytes), in->pointer, in->available_bytes);
+            subBuffer->available_bytes -= in->available_bytes;
             in->pointer += in->available_bytes;
             in->available_bytes = 0;
             return NULL;
         } else {
-            memcpy(encodeWarpPointer->buffer + (encodeWarpPointer->size - encodeWarpPointer->buffer->available_bytes), in->pointer, encodeWarpPointer->buffer->available_bytes);
-            encodeWarpPointer->buffer->available_bytes = 0;
-            in->pointer += encodeWarpPointer->buffer->available_bytes;
-            in->available_bytes -= encodeWarpPointer->buffer->available_bytes;
-            return encodeWarpPointer->buffer;
+            memcpy(subBuffer + (resetSize - subBuffer->available_bytes), in->pointer, subBuffer->available_bytes);
+            subBuffer->available_bytes = 0;
+            in->pointer += subBuffer->available_bytes;
+            in->available_bytes -= subBuffer->available_bytes;
+            return subBuffer;
         }
     }
-    if (in->available_bytes == limit/*< warpPointer->size*/) {
-        memcpy(encodeWarpPointer->buffer + (encodeWarpPointer->size - encodeWarpPointer->buffer->available_bytes), in->pointer, in->available_bytes);
-        encodeWarpPointer->buffer->available_bytes -= in->available_bytes;
+    if (in->available_bytes == limit/*< subBuffer->size*/) {
+        memcpy(subBuffer + (resetSize - subBuffer->available_bytes), in->pointer, in->available_bytes);
+        subBuffer->available_bytes -= in->available_bytes;
         in->pointer += in->available_bytes;
         in->available_bytes = 0;
         return NULL;
