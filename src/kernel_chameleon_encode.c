@@ -174,7 +174,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_init(d
 
     //state->partialInput.pointer = state->partialInputBuffer;
     //state->partialInput.available_bytes = 0;
-    state->reader = density_kernel_encode_warp_instanciate_reader(DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE);
+    state->reader = density_kernel_encode_warp_pointer_create(DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE);
 
 #if DENSITY_ENABLE_PARALLELIZABLE_DECOMPRESSIBLE_OUTPUT == DENSITY_YES
     state->resetCycle = DENSITY_DICTIONARY_PREFERRED_RESET_CYCLE - 1;
@@ -190,6 +190,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
     uint32_t hash;
     uint64_t chunk;
     density_byte *pointerOutBefore;
+    const uint_fast64_t limit = in->available_bytes % DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE;
 
     switch (state->process) {
         case DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK:
@@ -201,11 +202,15 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
             while (true) {
                 if ((returnState = density_chameleon_encode_check_state(out, state)))
                     return returnState;
-                density_memory_location *memoryLocation = density_kernel_encode_warp_read(state->reader, in, flush);
-                if (memoryLocation == NULL) {
+                density_memory_location *memoryLocation = density_kernel_encode_warp_pointer_read(state->reader, in, limit);
+                if (!memoryLocation) {
                     if (flush) {
-                        state->process = DENSITY_CHAMELEON_ENCODE_PROCESS_FLUSH;
-                        goto flush_accumulated_data;
+                        memcpy(out->pointer, in->pointer, in->available_bytes);
+                        out->pointer += in->available_bytes;
+                        in->pointer += in->available_bytes;
+                        out->available_bytes -= in->available_bytes;
+                        in->available_bytes = 0;
+                        return DENSITY_KERNEL_ENCODE_STATE_FINISHED;
                     } else
                         return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_INPUT_BUFFER;
                 }
@@ -215,38 +220,38 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
                 out->available_bytes -= (out->pointer - pointerOutBefore);
             }
 
-        case DENSITY_CHAMELEON_ENCODE_PROCESS_FLUSH:
-        flush_accumulated_data:
-            while (true) {
-                while (state->shift ^ bitsizeof(density_chameleon_signature)) {
-                    if (state->reader->fillBuffer->available_bytes < sizeof(uint32_t))
-                        goto exit;
-                    else {
-                        if (out->available_bytes < sizeof(uint32_t))
-                            return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
+            /*case DENSITY_CHAMELEON_ENCODE_PROCESS_FLUSH:
 
-                        pointerOutBefore = out->pointer;
-                        density_chameleon_encode_kernel(out, &hash, *(uint32_t *) (state->reader->fillBuffer->pointer), state);
-                        out->available_bytes -= (out->pointer - pointerOutBefore);
+                while (true) {
+                    while (state->shift ^ bitsizeof(density_chameleon_signature)) {
+                        if (state->reader->buffer->available_bytes < sizeof(uint32_t))
+                            goto exit;
+                        else {
+                            if (out->available_bytes < sizeof(uint32_t))
+                                return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
 
-                        state->reader->fillBuffer->pointer += sizeof(uint32_t);
-                        state->reader->fillBuffer->available_bytes -= sizeof(uint32_t);
+                            pointerOutBefore = out->pointer;
+                            density_chameleon_encode_kernel(out, &hash, *(uint32_t *) (state->reader->buffer->pointer), state);
+                            out->available_bytes -= (out->pointer - pointerOutBefore);
+
+                            state->reader->buffer->pointer += sizeof(uint32_t);
+                            state->reader->buffer->available_bytes -= sizeof(uint32_t);
+                        }
                     }
+                    if (state->reader->buffer->available_bytes < sizeof(uint32_t))
+                        goto exit;
+                    else if ((returnState = density_chameleon_encode_prepare_new_block(out, state, sizeof(density_chameleon_signature))))
+                        return returnState;
                 }
-                if (state->reader->fillBuffer->available_bytes < sizeof(uint32_t))
-                    goto exit;
-                else if ((returnState = density_chameleon_encode_prepare_new_block(out, state, sizeof(density_chameleon_signature))))
-                    return returnState;
-            }
 
-        exit:
-            if (state->reader->fillBuffer->available_bytes) {
-                if (density_chameleon_encode_attempt_copy(out, state->reader->fillBuffer->pointer, (uint32_t) state->reader->fillBuffer->available_bytes))
-                    return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
-            }
-            state->reader->fillBuffer->available_bytes = 0;
-            state->process = DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK;
-            return DENSITY_KERNEL_ENCODE_STATE_FINISHED;
+            exit:
+                if (state->reader->buffer->available_bytes) {
+                    if (density_chameleon_encode_attempt_copy(out, state->reader->buffer->pointer, (uint32_t) state->reader->buffer->available_bytes))
+                        return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
+                }
+                state->reader->buffer->available_bytes = 0;
+                state->process = DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK;
+                return DENSITY_KERNEL_ENCODE_STATE_FINISHED;*/
     }
     /*DENSITY_KERNEL_ENCODE_STATE returnState;
     uint32_t hash;
@@ -367,5 +372,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
 }
 
 DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_finish(density_chameleon_encode_state *state) {
+    density_kernel_encode_warp_pointer_delete(state->reader);
+
     return DENSITY_KERNEL_ENCODE_STATE_READY;
 }

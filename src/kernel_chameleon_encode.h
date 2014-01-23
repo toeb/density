@@ -49,7 +49,7 @@
 #include "block.h"
 #include "kernel_encode.h"
 #include "density_api.h"
-#import "kernel_encode_warp_reader.h"
+#import "kernel_encode_warp_pointer.h"
 
 #define DENSITY_CHAMELEON_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD             (2 * (sizeof(density_chameleon_signature) + sizeof(uint32_t) * bitsizeof(density_chameleon_signature)))
 #define DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE                    (2 * 4 * sizeof(uint64_t))
@@ -60,7 +60,7 @@ typedef enum {
     DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS,
     //DENSITY_CHAMELEON_ENCODE_PROCESS_ACCUMULATE,
     //DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS_ACCUMULATED,
-    DENSITY_CHAMELEON_ENCODE_PROCESS_FLUSH,
+    //DENSITY_CHAMELEON_ENCODE_PROCESS_FLUSH,
 } DENSITY_CHAMELEON_ENCODE_PROCESS;
 
 #pragma pack(push)
@@ -79,7 +79,7 @@ typedef struct {
 
     //density_byte partialInputBuffer[DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE];
     //density_memory_location partialInput;
-    density_kernel_encode_warp_reader* reader;
+    density_kernel_encode_warp_pointer * reader;
 
     density_chameleon_dictionary dictionary;
 } density_chameleon_encode_state;
