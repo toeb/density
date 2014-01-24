@@ -172,6 +172,37 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_init(d
 }
 
 DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_process(density_memory_location *restrict in, density_memory_location *restrict out, density_chameleon_decode_state *restrict state, const density_bool flush) {
+    DENSITY_KERNEL_DECODE_STATE returnState;
+    uint32_t hash;
+    uint64_t chunk;
+    density_byte *pointerOutBefore;
+    density_memory_location *readMemoryLocation;
+    const uint_fast64_t limit = in->available_bytes % DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE;
+
+    switch (state->process) {
+        case DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK:
+            if ((returnState = density_chameleon_encode_prepare_new_block(out, state)))
+                return returnState;
+            state->process = DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS;
+
+        case DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS:
+            while (true) {
+                if (!(readMemoryLocation = density_warp_pointer_fetch(state->warpPointer, in, limit))) {
+                    if (flush) {
+                        density_chameleon_encode_copy_remaining(out, in);
+                        return DENSITY_KERNEL_ENCODE_STATE_FINISHED;
+                    } else
+                        return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_INPUT_BUFFER;
+                }
+                if ((returnState = density_chameleon_encode_check_state(out, state)))
+                    return returnState;
+                pointerOutBefore = out->pointer;
+                density_chameleon_encode_process_unit(&chunk, readMemoryLocation, out, &hash, state);
+                readMemoryLocation->available_bytes -= DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE;
+                out->available_bytes -= (out->pointer - pointerOutBefore);
+            }
+    }
+
     /*DENSITY_KERNEL_DECODE_STATE returnState;
     uint_fast64_t efficiencyBytes;
     uint_fast64_t lookAhead;
@@ -319,7 +350,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_proces
                         return returnState;
 
                     pointerOutBefore = out->pointer;
-                    density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
+                    density_chameleon_encode_process_unit(&chunk, in, out, &hash, state);
                     density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
                     in->available_bytes -= DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE;
                     out->available_bytes -= (out->pointer - pointerOutBefore);

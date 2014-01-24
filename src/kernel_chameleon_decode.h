@@ -53,7 +53,7 @@
 #include "block_header.h"
 
 #define DENSITY_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD              (bitsizeof(density_chameleon_signature) * sizeof(uint32_t))
-#define DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE                     (sizeof(density_block_header) + sizeof(density_mode_marker) + sizeof(density_chameleon_signature) + bitsizeof(density_chameleon_signature) * sizeof(uint32_t))
+//#define DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE                     (sizeof(density_block_header) + sizeof(density_mode_marker) + sizeof(density_chameleon_signature) + bitsizeof(density_chameleon_signature) * sizeof(uint32_t))
 
 typedef enum {
     DENSITY_CHAMELEON_DECODE_PROCESS_PREPARE_NEW_BLOCK_BEFORE_PROCESSING_ACCUMULATED,
@@ -80,8 +80,10 @@ typedef struct {
 
     uint_fast64_t endDataOverhead;
 
-    density_byte partialInputBuffer[DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE << 1];
-    density_memory_location partialInput;
+    density_warp_pointer *warpPointer;
+
+    //density_byte partialInputBuffer[DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE << 1];
+    //density_memory_location partialInput;
 
     density_chameleon_dictionary dictionary;
 } density_chameleon_decode_state;

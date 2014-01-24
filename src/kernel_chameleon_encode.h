@@ -49,10 +49,10 @@
 #include "block.h"
 #include "kernel_encode.h"
 #include "density_api.h"
-#import "kernel_encode_warp_pointer.h"
+#include "warp_pointer.h"
 
-#define DENSITY_CHAMELEON_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD             (2 * (sizeof(density_chameleon_signature) + sizeof(uint32_t) * bitsizeof(density_chameleon_signature)))
-#define DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE                    (2 * 4 * sizeof(uint64_t))
+#define DENSITY_CHAMELEON_ENCODE_MINIMUM_OUTPUT_LOOKAHEAD             (sizeof(density_chameleon_signature) + sizeof(uint32_t) * bitsizeof(density_chameleon_signature))
+#define DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE                    (8 * sizeof(uint64_t))
 
 typedef enum {
     DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK,
@@ -73,7 +73,7 @@ typedef struct {
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;
 
-    density_kernel_encode_warp_pointer *warpPointer;
+    density_warp_pointer *warpPointer;
 
     density_chameleon_dictionary dictionary;
 } density_chameleon_encode_state;

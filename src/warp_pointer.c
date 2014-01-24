@@ -2,7 +2,7 @@
  * Centaurean Density
  * http://www.libssc.net
  *
- * Copyright (c) 2013, Guillaume Voirin
+ * Copyright (c) 2014, Guillaume Voirin
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,8 +30,10 @@
  * 23/01/14 12:51
  */
 
-DENSITY_FORCE_INLINE density_kernel_encode_warp_pointer *density_kernel_encode_warp_pointer_allocate(const uint_fast32_t size) {
-    density_kernel_encode_warp_pointer *warpPointer = (density_kernel_encode_warp_pointer *) malloc(sizeof(density_kernel_encode_warp_pointer));
+#include "warp_pointer.h"
+
+DENSITY_FORCE_INLINE density_warp_pointer *density_warp_pointer_allocate(uint_fast32_t const size) {
+    density_warp_pointer *warpPointer = (density_warp_pointer *) malloc(sizeof(density_warp_pointer));
     warpPointer->buffer = (density_memory_location *) malloc(sizeof(density_memory_location));
     warpPointer->buffer->pointer = (density_byte *) malloc(size * sizeof(density_byte));
     warpPointer->buffer->available_bytes = size;
@@ -39,13 +41,13 @@ DENSITY_FORCE_INLINE density_kernel_encode_warp_pointer *density_kernel_encode_w
     return warpPointer;
 }
 
-DENSITY_FORCE_INLINE void density_kernel_encode_warp_pointer_free(density_kernel_encode_warp_pointer *warpPointer) {
+DENSITY_FORCE_INLINE void density_warp_pointer_free(density_warp_pointer *warpPointer) {
     free(warpPointer->buffer->pointer);
     free(warpPointer->buffer);
     free(warpPointer);
 }
 
-DENSITY_FORCE_INLINE density_memory_location *density_kernel_encode_warp_pointer_fetch(density_kernel_encode_warp_pointer *warpPointer, density_memory_location *in, const uint_fast64_t limit) {
+DENSITY_FORCE_INLINE density_memory_location *density_warp_pointer_fetch(density_warp_pointer *warpPointer, density_memory_location *in, uint_fast64_t const limit) {
     if (warpPointer->buffer->available_bytes ^ warpPointer->size) {
         if (!warpPointer->buffer->available_bytes)
             warpPointer->buffer->available_bytes = warpPointer->size;

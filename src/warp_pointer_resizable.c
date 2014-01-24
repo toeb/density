@@ -2,7 +2,7 @@
  * Centaurean Density
  * http://www.libssc.net
  *
- * Copyright (c) 2013, Guillaume Voirin
+ * Copyright (c) 2014, Guillaume Voirin
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,36 +27,44 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * 23/01/14 12:51
+ * 23/01/14 17:17
  */
 
-DENSITY_FORCE_INLINE density_kernel_encode_warp_pointer *density_kernel_encode_warp_pointer_allocate(const uint_fast32_t size) {
-    density_kernel_encode_warp_pointer *warpPointer = (density_kernel_encode_warp_pointer *) malloc(sizeof(density_kernel_encode_warp_pointer));
+#include "warp_pointer_resizable.h"
+
+DENSITY_FORCE_INLINE density_warp_pointer_resizable *density_kernel_pointer_resizable_allocate(const uint_fast32_t maxSize) {
+    density_warp_pointer_resizable *warpPointer = (density_warp_pointer_resizable *) malloc(sizeof(density_warp_pointer_resizable));
     warpPointer->buffer = (density_memory_location *) malloc(sizeof(density_memory_location));
-    warpPointer->buffer->pointer = (density_byte *) malloc(size * sizeof(density_byte));
-    warpPointer->buffer->available_bytes = size;
-    warpPointer->size = size;
+    warpPointer->buffer->pointer = (density_byte *) malloc(maxSize * sizeof(density_byte));
+    warpPointer->buffer->available_bytes = maxSize;
+    warpPointer->realSize = maxSize;
+    warpPointer->currentSize = maxSize;
     return warpPointer;
 }
 
-DENSITY_FORCE_INLINE void density_kernel_encode_warp_pointer_free(density_kernel_encode_warp_pointer *warpPointer) {
+DENSITY_FORCE_INLINE void density_warp_pointer_resizable_free(density_warp_pointer_resizable *warpPointer) {
     free(warpPointer->buffer->pointer);
     free(warpPointer->buffer);
     free(warpPointer);
 }
 
-DENSITY_FORCE_INLINE density_memory_location *density_kernel_encode_warp_pointer_fetch(density_kernel_encode_warp_pointer *warpPointer, density_memory_location *in, const uint_fast64_t limit) {
-    if (warpPointer->buffer->available_bytes ^ warpPointer->size) {
+DENSITY_FORCE_INLINE void density_warp_pointer_resizable_reset(density_warp_pointer_resizable *warpPointer, const uint_fast32_t size) {
+    warpPointer->buffer->available_bytes = size;
+    warpPointer->currentSize = size;
+}
+
+DENSITY_FORCE_INLINE density_memory_location *density_warp_pointer_resizable_fetch(density_warp_pointer_resizable *restrict warpPointer, density_memory_location *restrict in, const uint_fast64_t limit) {
+    if (warpPointer->buffer->available_bytes ^ warpPointer->currentSize) {
         if (!warpPointer->buffer->available_bytes)
-            warpPointer->buffer->available_bytes = warpPointer->size;
+            density_warp_pointer_resizable_reset(warpPointer, warpPointer->currentSize);
         else if (in->available_bytes < warpPointer->buffer->available_bytes) {
-            memcpy(warpPointer->buffer + (warpPointer->size - warpPointer->buffer->available_bytes), in->pointer, in->available_bytes);
+            memcpy(warpPointer->buffer + (warpPointer->currentSize - warpPointer->buffer->available_bytes), in->pointer, in->available_bytes);
             warpPointer->buffer->available_bytes -= in->available_bytes;
             in->pointer += in->available_bytes;
             in->available_bytes = 0;
             return NULL;
         } else {
-            memcpy(warpPointer->buffer + (warpPointer->size - warpPointer->buffer->available_bytes), in->pointer, warpPointer->buffer->available_bytes);
+            memcpy(warpPointer->buffer + (warpPointer->currentSize - warpPointer->buffer->available_bytes), in->pointer, warpPointer->buffer->available_bytes);
             in->pointer += warpPointer->buffer->available_bytes;
             in->available_bytes -= warpPointer->buffer->available_bytes;
             warpPointer->buffer->available_bytes = 0;
@@ -64,7 +72,7 @@ DENSITY_FORCE_INLINE density_memory_location *density_kernel_encode_warp_pointer
         }
     }
     if (in->available_bytes == limit) {
-        memcpy(warpPointer->buffer + (warpPointer->size - warpPointer->buffer->available_bytes), in->pointer, in->available_bytes);
+        memcpy(warpPointer->buffer + (warpPointer->currentSize - warpPointer->buffer->available_bytes), in->pointer, in->available_bytes);
         warpPointer->buffer->available_bytes -= in->available_bytes;
         in->pointer += in->available_bytes;
         in->available_bytes = 0;

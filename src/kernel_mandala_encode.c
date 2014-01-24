@@ -320,10 +320,10 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_process(
     uint_fast64_t remaining;
     uint64_t chunk;
 
-    if (in->size == 0)
+    if (in->realSize == 0)
         goto exit;
 
-    const uint_fast64_t limit = in->size & ~0x1F;
+    const uint_fast64_t limit = in->realSize & ~0x1F;
 
     switch (state->process) {
         case DENSITY_MANDALA_ENCODE_PROCESS_CHECK_STATE:
@@ -339,7 +339,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_process(
             break;
 
         case DENSITY_MANDALA_ENCODE_PROCESS_DATA:
-            if (in->size - in->position < 4 * sizeof(uint64_t))
+            if (in->realSize - in->position < 4 * sizeof(uint64_t))
                 goto finish;
             while (true) {
                 density_mandala_encode_process_span(&chunk, in, out, &hash, state);
@@ -360,22 +360,22 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_mandala_encode_process(
         case DENSITY_MANDALA_ENCODE_PROCESS_FINISH:
             while (true) {
                 while (state->shift ^ 64) {
-                    if (in->size - in->position < sizeof(uint32_t))
+                    if (in->realSize - in->position < sizeof(uint32_t))
                         goto finish;
                     else {
-                        if (out->size - out->position < sizeof(uint32_t))
+                        if (out->realSize - out->position < sizeof(uint32_t))
                             return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
                         density_mandala_encode_kernel(out, &hash, *(uint32_t *) (in->pointer + in->position), state);
                         in->position += sizeof(uint32_t);
                     }
                 }
-                if (in->size - in->position < sizeof(uint32_t))
+                if (in->realSize - in->position < sizeof(uint32_t))
                     goto finish;
                 else if ((returnState = density_mandala_encode_prepare_new_block(out, state, sizeof(density_mandala_signature))))
                     return returnState;
             }
         finish:
-            remaining = in->size - in->position;
+            remaining = in->realSize - in->position;
             if (remaining > 0) {
                 if (state->shift ^ 64)
                     density_mandala_encode_write_to_signature(state, DENSITY_MANDALA_SIGNATURE_FLAG_CHUNK);

@@ -293,10 +293,10 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_mandala_decode_process(
     uint_fast64_t limitIn = 0;
     uint_fast64_t limitOut = 0;
 
-    if (in->size > DENSITY_MANDALA_DECODE_MINIMUM_INPUT_LOOKAHEAD + state->endDataOverhead)
-        limitIn = in->size - DENSITY_MANDALA_DECODE_MINIMUM_INPUT_LOOKAHEAD - state->endDataOverhead;
-    if (out->size > DENSITY_MANDALA_DECODE_MINIMUM_OUTPUT_LOOKAHEAD)
-        limitOut = out->size - DENSITY_MANDALA_DECODE_MINIMUM_OUTPUT_LOOKAHEAD;
+    if (in->realSize > DENSITY_MANDALA_DECODE_MINIMUM_INPUT_LOOKAHEAD + state->endDataOverhead)
+        limitIn = in->realSize - DENSITY_MANDALA_DECODE_MINIMUM_INPUT_LOOKAHEAD - state->endDataOverhead;
+    if (out->realSize > DENSITY_MANDALA_DECODE_MINIMUM_OUTPUT_LOOKAHEAD)
+        limitOut = out->realSize - DENSITY_MANDALA_DECODE_MINIMUM_OUTPUT_LOOKAHEAD;
 
     switch (state->process) {
         case DENSITY_MANDALA_DECODE_PROCESS_SIGNATURES_AND_DATA_FAST:
@@ -311,7 +311,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_mandala_decode_process(
             break;
 
         case DENSITY_MANDALA_DECODE_PROCESS_SIGNATURE_SAFE:
-            if (flush && (in->size - in->position < sizeof(density_mandala_signature) + state->endDataOverhead)) {
+            if (flush && (in->realSize - in->position < sizeof(density_mandala_signature) + state->endDataOverhead)) {
                 state->process = DENSITY_MANDALA_DECODE_PROCESS_FINISH;
                 return DENSITY_KERNEL_DECODE_STATE_READY;
             }
@@ -344,7 +344,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_mandala_decode_process(
                     default:
                         break;
                 }
-                if (flush && (in->size - in->position < overhead + state->endDataOverhead)) {
+                if (flush && (in->realSize - in->position < overhead + state->endDataOverhead)) {
                     state->process = DENSITY_MANDALA_DECODE_PROCESS_FINISH;
                     return DENSITY_KERNEL_DECODE_STATE_READY;
                 }
@@ -370,7 +370,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_mandala_decode_process(
                     return DENSITY_KERNEL_DECODE_STATE_STALL_ON_OUTPUT_BUFFER;
                 state->uncompressedChunkBytes = 0;
             }
-            remaining = in->size - in->position;
+            remaining = in->realSize - in->position;
             if (remaining > state->endDataOverhead) {
                 if (density_mandala_decode_attempt_copy(out, in->pointer + in->position, (uint32_t) (remaining - state->endDataOverhead)))
                     return DENSITY_KERNEL_DECODE_STATE_STALL_ON_OUTPUT_BUFFER;

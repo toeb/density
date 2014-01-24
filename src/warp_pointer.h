@@ -2,7 +2,7 @@
  * Centaurean Density
  * http://www.libssc.net
  *
- * Copyright (c) 2013, Guillaume Voirin
+ * Copyright (c) 2014, Guillaume Voirin
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,10 +40,10 @@ typedef struct {
     uint_fast32_t size;
 } density_warp_pointer;
 
-density_kernel_encode_warp_pointer *density_kernel_encode_warp_pointer_allocate(const uint_fast32_t);
+density_warp_pointer *density_warp_pointer_allocate(uint_fast32_t const);
 
-void density_kernel_encode_warp_pointer_free(density_kernel_encode_warp_pointer *);
+void density_warp_pointer_free(density_warp_pointer *);
 
-density_memory_location *density_kernel_encode_warp_pointer_fetch(density_kernel_encode_warp_pointer *, density_memory_location *, const uint_fast64_t);
+density_memory_location *density_warp_pointer_fetch(density_warp_pointer *, density_memory_location *, uint_fast64_t const);
 
 
