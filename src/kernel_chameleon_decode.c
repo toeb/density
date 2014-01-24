@@ -85,19 +85,16 @@ DENSITY_FORCE_INLINE void density_chameleon_decode_read_signature(density_memory
 DENSITY_FORCE_INLINE void density_chameleon_decode_read_compressed_chunk(uint16_t *chunk, density_memory_location *restrict in) {
     *chunk = *(uint16_t *) (in->pointer);
     in->pointer += sizeof(uint16_t);
-    in->available_bytes -= sizeof(uint16_t);
 }
 
 DENSITY_FORCE_INLINE void density_chameleon_decode_read_uncompressed_chunk(uint32_t *chunk, density_memory_location *restrict in) {
     *chunk = *(uint32_t *) (in->pointer);
     in->pointer += sizeof(uint32_t);
-    in->available_bytes -= sizeof(uint32_t);
 }
 
 DENSITY_FORCE_INLINE void density_chameleon_decode_compressed_chunk(const uint16_t *chunk, density_memory_location *restrict out, density_chameleon_decode_state *restrict state) {
     *(uint32_t *) (out->pointer) = (&state->dictionary.entries[DENSITY_LITTLE_ENDIAN_16(*chunk)])->as_uint32_t;
     out->pointer += sizeof(uint32_t);
-    out->available_bytes -= sizeof(uint32_t);
 }
 
 DENSITY_FORCE_INLINE void density_chameleon_decode_uncompressed_chunk(const uint32_t *chunk, density_memory_location *restrict out, density_chameleon_decode_state *restrict state) {
@@ -106,7 +103,6 @@ DENSITY_FORCE_INLINE void density_chameleon_decode_uncompressed_chunk(const uint
     (&state->dictionary.entries[hash])->as_uint32_t = *chunk;
     *(uint32_t *) (out->pointer) = *chunk;
     out->pointer += sizeof(uint32_t);
-    out->available_bytes -= sizeof(uint32_t);
 }
 
 DENSITY_FORCE_INLINE void density_chameleon_decode_kernel(density_memory_location *restrict in, density_memory_location *restrict out, const density_bool compressed, density_chameleon_decode_state *restrict state) {
@@ -132,23 +128,12 @@ DENSITY_FORCE_INLINE void density_chameleon_decode_process_data(density_memory_l
     }
 }
 
-DENSITY_FORCE_INLINE density_bool density_chameleon_decode_attempt_copy(density_memory_location *restrict out, density_byte *restrict origin, const uint_fast32_t count) {
-    if (count <= out->available_bytes) {
-        memcpy(out->pointer, origin, count);
-        out->pointer += count;
-        out->available_bytes -= count;
-        return false;
-    }
-    return true;
-}
-
-DENSITY_FORCE_INLINE void density_chameleon_decode_fill_signature(density_memory_location *restrict in, density_chameleon_decode_state *restrict state, uint_fast64_t missingSignatureBytes) {
-    memcpy(state->partialInput.pointer + state->partialInput.available_bytes, in->pointer, missingSignatureBytes);
-
-    state->partialInput.available_bytes += missingSignatureBytes;
-
-    in->pointer += missingSignatureBytes;
-    in->available_bytes -= missingSignatureBytes;
+DENSITY_FORCE_INLINE void density_chameleon_decode_copy_remaining(density_memory_location *restrict out, density_memory_location *restrict in) {
+    memcpy(out->pointer, in->pointer, in->available_bytes);
+    out->pointer += in->available_bytes;
+    in->pointer += in->available_bytes;
+    out->available_bytes -= in->available_bytes;
+    in->available_bytes = 0;
 }
 
 DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_init(density_chameleon_decode_state *restrict state, const density_main_header_parameters parameters, const uint_fast32_t endDataOverhead) {
@@ -156,8 +141,8 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_init(d
     state->efficiencyChecked = 0;
     density_chameleon_dictionary_reset(&state->dictionary);
 
-    state->partialInput.pointer = state->partialInputBuffer;
-    state->partialInput.available_bytes = 0;
+    state->warperSignature = density_warper_allocate(sizeof(density_chameleon_signature));
+    state->warperBody = density_warper_allocate(DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE);
 
     state->parameters = parameters;
     density_byte resetDictionaryCycleShift = state->parameters.as_bytes[0];
@@ -166,281 +151,49 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_init(d
 
     state->endDataOverhead = endDataOverhead;
 
-    state->process = DENSITY_CHAMELEON_DECODE_PROCESS_CONTINUE;
+    state->process = DENSITY_CHAMELEON_DECODE_PROCESS_PREPARE_NEW_BLOCK;
 
     return DENSITY_KERNEL_DECODE_STATE_READY;
 }
 
 DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_process(density_memory_location *restrict in, density_memory_location *restrict out, density_chameleon_decode_state *restrict state, const density_bool flush) {
     DENSITY_KERNEL_DECODE_STATE returnState;
-    uint32_t hash;
-    uint64_t chunk;
-    density_byte *pointerOutBefore;
     density_memory_location *readMemoryLocation;
-    const uint_fast64_t limit = in->available_bytes % DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE;
+    uint_fast32_t bodyLength;
 
     switch (state->process) {
-        case DENSITY_CHAMELEON_ENCODE_PROCESS_PREPARE_NEW_BLOCK:
-            if ((returnState = density_chameleon_encode_prepare_new_block(out, state)))
-                return returnState;
-            state->process = DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS;
-
-        case DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS:
-            while (true) {
-                if (!(readMemoryLocation = density_warp_pointer_fetch(state->warpPointer, in, limit))) {
-                    if (flush) {
-                        density_chameleon_encode_copy_remaining(out, in);
-                        return DENSITY_KERNEL_ENCODE_STATE_FINISHED;
-                    } else
-                        return DENSITY_KERNEL_ENCODE_STATE_STALL_ON_INPUT_BUFFER;
-                }
-                if ((returnState = density_chameleon_encode_check_state(out, state)))
-                    return returnState;
-                pointerOutBefore = out->pointer;
-                density_chameleon_encode_process_unit(&chunk, readMemoryLocation, out, &hash, state);
-                readMemoryLocation->available_bytes -= DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE;
-                out->available_bytes -= (out->pointer - pointerOutBefore);
-            }
-    }
-
-    /*DENSITY_KERNEL_DECODE_STATE returnState;
-    uint_fast64_t efficiencyBytes;
-    uint_fast64_t lookAhead;
-    uint_fast64_t notAvailable;
-
-    switch (state->process) {
-        case DENSITY_CHAMELEON_DECODE_PROCESS_CONTINUE:
-            if (state->partialInput.available_bytes) {
-                efficiencyBytes = (uint_fast64_t)(state->signaturesCount == DENSITY_CHAMELEON_PREFERRED_EFFICIENCY_CHECK_SIGNATURES ? 2 : 0);
-                lookAhead = sizeof(density_chameleon_signature) + efficiencyBytes;
-                if (state->partialInput.available_bytes < lookAhead) {
-                    uint_fast64_t missingSignatureBytes = lookAhead - state->partialInput.available_bytes;
-                    if (in->available_bytes > state->endDataOverhead && in->available_bytes - state->endDataOverhead >= missingSignatureBytes) {
-                        density_chameleon_decode_fill_signature(in, state, missingSignatureBytes);
-                    } else
-                        goto accumulate_remaining_bytes;
-                }
-                int bitcount = __builtin_popcountll(*(density_chameleon_signature *) (state->partialInput.pointer + efficiencyBytes));
-                uint_fast64_t packetLength = sizeof(density_chameleon_signature) + (bitsizeof(density_chameleon_signature) - bitcount) * sizeof(uint32_t) + bitcount * sizeof(uint16_t);
-                if (packetLength < state->partialInput.available_bytes) {
-                    if ((returnState = density_chameleon_decode_check_state(out, state)))
-                        return returnState;
-                    density_chameleon_decode_read_signature(&state->partialInput, state);
-                    density_chameleon_decode_process_data(&state->partialInput, out, state);
-
-                    efficiencyBytes = (uint_fast64_t)(state->signaturesCount == DENSITY_CHAMELEON_PREFERRED_EFFICIENCY_CHECK_SIGNATURES ? 2 : 0);
-                    lookAhead = sizeof(density_chameleon_signature) + efficiencyBytes;
-                    if (state->partialInput.available_bytes < lookAhead) {
-                        uint_fast64_t missingSignatureBytes = lookAhead - state->partialInput.available_bytes;
-                        if (in->available_bytes >= missingSignatureBytes) {
-                            if ((returnState = density_chameleon_decode_check_state(out, state)))
-                                return returnState;
-                            density_chameleon_decode_fill_signature(in, state, missingSignatureBytes);
-                        } else
-                            goto accumulate_remaining_bytes;
-                    }
-                    bitcount = __builtin_popcountll(*(density_chameleon_signature *) (state->partialInput.pointer + efficiencyBytes));
-                    packetLength = sizeof(density_chameleon_signature) + (bitsizeof(density_chameleon_signature) - bitcount) * sizeof(uint32_t) + bitcount * sizeof(uint16_t);
-                }
-                uint_fast64_t missingBytes = packetLength - state->partialInput.available_bytes;
-                if (in->available_bytes >= missingBytes) {
-                    memcpy(state->partialInput.pointer + state->partialInput.available_bytes, in->pointer, missingBytes);
-
-                    state->partialInput.available_bytes += missingBytes;
-
-                    in->pointer += missingBytes;
-                    in->available_bytes -= missingBytes;
-
-                    if ((returnState = density_chameleon_decode_check_state(out, state)))
-                        return returnState;
-                    density_chameleon_decode_read_signature(&state->partialInput, state);
-                    density_chameleon_decode_process_data(&state->partialInput, out, state);
-
-                    state->partialInput.pointer = state->partialInputBuffer;
-                    state->partialInput.available_bytes = 0;
-                    goto zero_bytes_accumulated;
-                } else {
-                    accumulate_remaining_bytes:
-                    notAvailable = (flush ? state->endDataOverhead : 0);
-                    if (in->available_bytes > notAvailable) {
-                        memcpy(state->partialInput.pointer + state->partialInput.available_bytes, in->pointer, in->available_bytes - notAvailable);
-                        state->partialInput.available_bytes += (in->available_bytes - notAvailable);
-
-                        in->pointer += (in->available_bytes - notAvailable);
-                        in->available_bytes = notAvailable;
-                    }
-
-                    if (flush) {
-                        state->process = DENSITY_CHAMELEON_DECODE_PROCESS_FLUSH;
-                        goto flush_accumulated_data;
-                    } else
-                        return DENSITY_KERNEL_DECODE_STATE_STALL_ON_INPUT_BUFFER;
-                }
-            } else {
-                zero_bytes_accumulated:
-                while (in->available_bytes >= DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE) {
-                    if ((returnState = density_chameleon_decode_check_state(out, state)))
-                        return returnState;
-                    density_chameleon_decode_read_signature(in, state);
-                    density_chameleon_decode_process_data(in, out, state);
-                }
-                goto accumulate_remaining_bytes;
-            }
-
-        case DENSITY_CHAMELEON_DECODE_PROCESS_FLUSH:
-        flush_accumulated_data:
-            efficiencyBytes = (uint_fast64_t)(state->signaturesCount == DENSITY_CHAMELEON_PREFERRED_EFFICIENCY_CHECK_SIGNATURES ? 2 : 0);
-            lookAhead = sizeof(density_chameleon_signature) + efficiencyBytes;
-            if (state->partialInput.available_bytes > lookAhead) {
-                if ((returnState = density_chameleon_decode_check_state(out, state)))
-                    return returnState;
-                density_chameleon_decode_read_signature(&state->partialInput, state);
-                while (state->shift ^ 64) {
-                    if (state->partialInput.available_bytes < sizeof(uint16_t))
-                        goto exit;
-                    else {
-                        density_chameleon_decode_kernel(&state->partialInput, out, density_chameleon_decode_test_compressed(state), state);
-                        state->shift++;
-                    }
-                }
-            }
-        exit:
-            if (state->partialInput.available_bytes > 0) {
-                if (density_chameleon_decode_attempt_copy(out, state->partialInput.pointer, (uint32_t) state->partialInput.available_bytes))
-                    return DENSITY_KERNEL_DECODE_STATE_STALL_ON_OUTPUT_BUFFER;
-            }
-            state->process = DENSITY_CHAMELEON_DECODE_PROCESS_CONTINUE;
-            return DENSITY_KERNEL_DECODE_STATE_FINISHED;
-    }*/
-
-    /*DENSITY_KERNEL_DECODE_STATE returnState;
-    uint32_t hash;
-    uint64_t chunk;
-    uint_fast64_t missingBytes;
-    uint_fast64_t copyBytes;
-    uint_fast64_t limit;
-    density_byte *pointerOutBefore;
-    uint_fast64_t efficiencyBytes;
-    int bitcount;
-    uint_fast64_t packetLength;
-
-
-    switch (state->process) {
-        case DENSITY_CHAMELEON_DECODE_PROCESS_PREPARE_NEW_BLOCK_BEFORE_PROCESSING_ACCUMULATED:
-            if ((returnState = density_chameleon_encode_prepare_new_block(out, state, DENSITY_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD)))
-                return returnState;
-            state->process = DENSITY_CHAMELEON_DECODE_PROCESS_COMPRESS_ACCUMULATED;
-            goto compress_accumulated;
-
         case DENSITY_CHAMELEON_DECODE_PROCESS_PREPARE_NEW_BLOCK:
-            if ((returnState = density_chameleon_encode_prepare_new_block(out, state, DENSITY_CHAMELEON_DECODE_MINIMUM_OUTPUT_LOOKAHEAD)))
+        prepare_new_block:
+            if ((returnState = density_chameleon_decode_check_state(out, state)))
                 return returnState;
-            state->process = DENSITY_CHAMELEON_DECODE_PROCESS_DECOMPRESS;
+            state->process = DENSITY_CHAMELEON_DECODE_PROCESS_SIGNATURE;
 
-        case DENSITY_CHAMELEON_DECODE_PROCESS_DECOMPRESS:
-        zero_bytes_accumulated:
-            efficiencyBytes = (uint_fast64_t)(state->signaturesCount == DENSITY_CHAMELEON_PREFERRED_EFFICIENCY_CHECK_SIGNATURES ? sizeof(density_mode_marker) : 0);
-            bitcount = __builtin_popcountll(*(density_chameleon_signature *) (state->partialInput.pointer + efficiencyBytes));
-            packetLength = sizeof(density_chameleon_signature) + (bitsizeof(density_chameleon_signature) - bitcount) * sizeof(uint32_t) + bitcount * sizeof(uint16_t);
-
-            if (in->available_bytes >= DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE) {
-                limit = in->available_bytes & (DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE - 1);
-                while (true) {
-                    if ((returnState = density_chameleon_encode_check_state(out, state)))
-                        return returnState;
-
-                    pointerOutBefore = out->pointer;
-                    density_chameleon_encode_process_unit(&chunk, in, out, &hash, state);
-                    density_chameleon_encode_process_span(&chunk, in, out, &hash, state);
-                    in->available_bytes -= DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE;
-                    out->available_bytes -= (out->pointer - pointerOutBefore);
-
-                    if (in->available_bytes == limit)
-                        break;
-                }
+        case DENSITY_CHAMELEON_DECODE_PROCESS_SIGNATURE:
+            if (flush && in->available_bytes < DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE) {
+                density_chameleon_decode_copy_remaining(out, in);
+                return DENSITY_KERNEL_DECODE_STATE_FINISHED;
             }
-            if (in->available_bytes)
-                state->process = DENSITY_CHAMELEON_DECODE_PROCESS_ACCUMULATE;
-            else {
-                if (flush) {
-                    state->process = DENSITY_CHAMELEON_DECODE_PROCESS_PREPARE_NEW_BLOCK;
-                    return DENSITY_KERNEL_DECODE_STATE_FINISHED;
-                } else
-                    return DENSITY_KERNEL_DECODE_STATE_STALL_ON_INPUT_BUFFER;
-            }
+            if (!(readMemoryLocation = density_warper_fetch(state->warperSignature, in)))
+                return DENSITY_KERNEL_DECODE_STATE_STALL_ON_INPUT_BUFFER;
+            density_chameleon_decode_read_signature(readMemoryLocation, state);
+            state->process = DENSITY_CHAMELEON_DECODE_PROCESS_DECOMPRESS_BODY;
 
-        case DENSITY_CHAMELEON_DECODE_PROCESS_ACCUMULATE:
-            missingBytes = DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE - state->partialInput.available_bytes;
-            copyBytes = in->available_bytes > missingBytes ? missingBytes : in->available_bytes;
-
-            memcpy(state->partialInput.pointer + state->partialInput.available_bytes, in->pointer, copyBytes);
-            state->partialInput.available_bytes += copyBytes;
-
-            in->pointer += copyBytes;
-            in->available_bytes -= copyBytes;
-
-            if (state->partialInput.available_bytes == DENSITY_CHAMELEON_DECODE_PROCESS_UNIT_SIZE)
-                state->process = DENSITY_CHAMELEON_DECODE_PROCESS_COMPRESS_ACCUMULATED;
-            else {
-                if (flush) {
-                    state->process = DENSITY_CHAMELEON_DECODE_PROCESS_FLUSH;
-                    goto flush_accumulated_data;
-                } else
-                    return DENSITY_KERNEL_DECODE_STATE_STALL_ON_INPUT_BUFFER;
-            }
-
-        case DENSITY_CHAMELEON_DECODE_PROCESS_COMPRESS_ACCUMULATED:
-        compress_accumulated:
-            if ((returnState = density_chameleon_encode_check_state(out, state)))
-                return returnState;
-
-            pointerOutBefore = out->pointer;
-            density_chameleon_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
-            density_chameleon_encode_process_span(&chunk, &state->partialInput, out, &hash, state);
-            state->partialInput.available_bytes = 0;
-            out->available_bytes -= (out->pointer - pointerOutBefore);
-
-            state->partialInput.pointer = state->partialInputBuffer;
-
-            state->process = DENSITY_CHAMELEON_DECODE_PROCESS_DECOMPRESS;
-            goto zero_bytes_accumulated;
-
-        case DENSITY_CHAMELEON_DECODE_PROCESS_FLUSH:
-        flush_accumulated_data:
-            while (true) {
-                while (state->shift ^ bitsizeof(density_chameleon_signature)) {
-                    if (state->partialInput.available_bytes < sizeof(uint32_t))
-                        goto exit;
-                    else {
-                        if (out->available_bytes < sizeof(uint32_t))
-                            return DENSITY_KERNEL_DECODE_STATE_STALL_ON_OUTPUT_BUFFER;
-
-                        pointerOutBefore = out->pointer;
-                        density_chameleon_encode_kernel(out, &hash, *(uint32_t *) (state->partialInput.pointer), state);
-                        out->available_bytes -= (out->pointer - pointerOutBefore);
-
-                        state->partialInput.pointer += sizeof(uint32_t);
-                        state->partialInput.available_bytes -= sizeof(uint32_t);
-                    }
-                }
-                if (state->partialInput.available_bytes < sizeof(uint32_t))
-                    goto exit;
-                else if ((returnState = density_chameleon_encode_prepare_new_block(out, state, sizeof(density_chameleon_signature))))
-                    return returnState;
-            }
-
-        exit:
-            if (state->partialInput.available_bytes) {
-                if (density_chameleon_encode_attempt_copy(out, state->partialInput.pointer, (uint32_t) state->partialInput.available_bytes))
-                    return DENSITY_KERNEL_DECODE_STATE_STALL_ON_OUTPUT_BUFFER;
-            }
-            state->partialInput.pointer = state->partialInputBuffer; // todo
-            state->partialInput.available_bytes = 0;
+        case DENSITY_CHAMELEON_DECODE_PROCESS_DECOMPRESS_BODY:
+            bodyLength = (uint_fast32_t) (__builtin_popcountll(state->signature) * (sizeof(uint16_t) - sizeof(uint32_t)) + sizeof(density_chameleon_signature) + sizeof(uint32_t) * bitsizeof(density_chameleon_signature));
+            //density_warp_pointer_resizable_reset(state->warpPointerBody, bodyLength);
+            if (!(readMemoryLocation = density_warper_fetch_from_sub_span(state->warperBody, in, bodyLength)))
+                return DENSITY_KERNEL_DECODE_STATE_STALL_ON_INPUT_BUFFER;
+            density_chameleon_decode_process_data(readMemoryLocation, out, state);
+            readMemoryLocation->available_bytes -= bodyLength;
+            out->available_bytes -= bitsizeof(density_chameleon_signature) * sizeof(uint32_t);
             state->process = DENSITY_CHAMELEON_DECODE_PROCESS_PREPARE_NEW_BLOCK;
-            return DENSITY_KERNEL_DECODE_STATE_FINISHED;
-    }*/
+            goto prepare_new_block;
+    }
 }
 
 DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_finish(density_chameleon_decode_state *state) {
+    density_warper_free(state->warperSignature);
+    density_warper_free(state->warperBody);
+
     return DENSITY_KERNEL_DECODE_STATE_READY;
 }

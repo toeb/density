@@ -27,26 +27,43 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * 23/01/14 17:16
+ * 21/01/14 21:32
  */
+
+#ifndef DENSITY_WARPER_H
+#define DENSITY_WARPER_H
 
 #include <string.h>
 #include "density_api.h"
 #include "globals.h"
 #include "kernel_encode.h"
 
+/*typedef enum {
+    DENSITY_LOCATION_ORIGIN_UNAVAILABLE,
+    DENSITY_LOCATION_ORIGIN_PROVIDED_BUFFER,
+    DENSITY_LOCATION_ORIGIN_STORAGE_BUFFER,
+} density_warper_memory_location_origin;*/
+
 typedef struct {
     density_memory_location *buffer;
-    uint_fast32_t realSize;
-    uint_fast32_t currentSize;
-} density_warp_pointer_resizable;
+    uint_fast32_t size;
+} density_warper_support_structure;
 
-density_warp_pointer_resizable *density_warp_pointer_resizable_allocate(const uint_fast32_t);
+/*typedef struct {
+    density_warper_memory_location_origin origin;
+    density_memory_location* location;
+} density_warper_memory_location;*/
 
-void density_warp_pointer_resizable_free(density_warp_pointer_resizable *);
+density_warper_support_structure *density_warper_allocate(uint_fast32_t const);
 
-void density_warp_pointer_resizable_reset(density_warp_pointer_resizable *, const uint_fast32_t);
+void density_warper_free(density_warper_support_structure *);
 
-density_memory_location *density_warp_pointer_resizable_fetch(density_warp_pointer_resizable *, density_memory_location *, const uint_fast64_t);
+density_memory_location *density_warper_fetch(density_warper_support_structure *, density_memory_location *);
+
+density_memory_location *density_warper_fetch_using_limit(density_warper_support_structure *, density_memory_location *, uint_fast64_t const);
+
+density_memory_location *density_warper_fetch_from_sub_span(density_warper_support_structure *, density_memory_location *, uint_fast32_t const);
+
+#endif
 
 

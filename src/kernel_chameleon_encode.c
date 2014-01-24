@@ -164,7 +164,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_init(d
     state->efficiencyChecked = 0;
     density_chameleon_dictionary_reset(&state->dictionary);
 
-    state->warpPointer = density_warp_pointer_allocate(DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE);
+    state->warper = density_warper_allocate(DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE);
 
 #if DENSITY_ENABLE_PARALLELIZABLE_DECOMPRESSIBLE_OUTPUT == DENSITY_YES
     state->resetCycle = DENSITY_DICTIONARY_PREFERRED_RESET_CYCLE - 1;
@@ -188,10 +188,10 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
             if ((returnState = density_chameleon_encode_prepare_new_block(out, state)))
                 return returnState;
             state->process = DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS;
-
+            
         case DENSITY_CHAMELEON_ENCODE_PROCESS_COMPRESS:
             while (true) {
-                if (!(readMemoryLocation = density_warp_pointer_fetch(state->warpPointer, in, limit))) {
+                if (!(readMemoryLocation = density_warper_fetch_using_limit(state->warper, in, limit))) {
                     if (flush) {
                         density_chameleon_encode_copy_remaining(out, in);
                         return DENSITY_KERNEL_ENCODE_STATE_FINISHED;
@@ -202,14 +202,15 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_proces
                     return returnState;
                 pointerOutBefore = out->pointer;
                 density_chameleon_encode_process_unit(&chunk, readMemoryLocation, out, &hash, state);
-                readMemoryLocation->available_bytes -= DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE;
+                if(readMemoryLocation->available_bytes)
+                    readMemoryLocation->available_bytes -= DENSITY_CHAMELEON_ENCODE_PROCESS_UNIT_SIZE;
                 out->available_bytes -= (out->pointer - pointerOutBefore);
             }
     }
 }
 
 DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE density_chameleon_encode_finish(density_chameleon_encode_state *state) {
-    density_warp_pointer_free(state->warpPointer);
+    density_warper_free(state->warper);
 
     return DENSITY_KERNEL_ENCODE_STATE_READY;
 }
