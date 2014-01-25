@@ -163,6 +163,8 @@ uint8_t density_version_revision(void);
  *                                                                                                                     *
  ***********************************************************************************************************************/
 
+#define DENSITY_STREAM_MINIMUM_OUT_BUFFER_SIZE                        (1 << 9)
+
 /*
  * Prepare a stream. This function *must* be called.
  *
