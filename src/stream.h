@@ -43,8 +43,6 @@
 #include "main_encode.h"
 #include "main_decode.h"
 
-#define DENSITY_STREAM_MINIMUM_OUT_BUFFER_SIZE                        (1 << 9)
-
 typedef enum {
     DENSITY_STREAM_PROCESS_PREPARED,
     DENSITY_STREAM_PROCESS_COMPRESSION_INITED,

@@ -114,10 +114,6 @@ DENSITY_FORCE_INLINE density_memory_location *density_warper_fetch_from_sub_span
         }
     }
     remaining = warper->buffer->available_bytes - (warper->size - bytes);
-    if (in->available_bytes < remaining) {
-        density_warper_append_to_storage_buffer(warper, in);
-        return NULL;
-    } else {
-        return in;
-    }
+    if (in->available_bytes < remaining)
+    DENSITY_WARPER_SECONDARY_SWITCH
 }

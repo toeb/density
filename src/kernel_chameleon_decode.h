@@ -51,7 +51,6 @@
 #include "density_api.h"
 #include "block_mode_marker.h"
 #include "block_header.h"
-#include "warp_pointer_resizable.h"
 #include "warper.h"
 #include "kernel_chameleon_encode.h"
 
