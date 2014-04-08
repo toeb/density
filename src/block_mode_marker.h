@@ -42,7 +42,7 @@
 #pragma pack(4)
 typedef struct {
     density_byte activeBlockMode;
-    density_byte reserved;    // To ensure 2-byte-wise length of output data // todo
+    density_byte reserved;
 } density_mode_marker;
 #pragma pack(pop)
 
