@@ -72,6 +72,7 @@ typedef struct {
     uint_fast64_t resetCycle;
 
     density_chameleon_signature signature;
+    uint_fast32_t bodyLength;
     uint_fast32_t shift;
     uint_fast32_t signaturesCount;
     uint_fast8_t efficiencyChecked;

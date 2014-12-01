@@ -61,17 +61,17 @@ DENSITY_FORCE_INLINE DENSITY_BLOCK_ENCODE_STATE density_block_encode_write_mode_
     if (sizeof(density_mode_marker) > out->available_bytes)
         return DENSITY_BLOCK_ENCODE_STATE_STALL_ON_OUTPUT_BUFFER;
 
-    switch (state->currentMode) {
+    switch (state->blockType) {
         case DENSITY_BLOCK_MODE_COPY:
             break;
 
         default:
             if (state->totalWritten > state->totalRead)
-                state->currentMode = DENSITY_BLOCK_MODE_COPY;
+                state->blockType = DENSITY_BLOCK_MODE_COPY;
             break;
     }
 
-    state->totalWritten += density_block_mode_marker_write(out, state->currentMode);
+    state->totalWritten += density_block_mode_marker_write(out, state->blockType);
 
     state->process = DENSITY_BLOCK_ENCODE_PROCESS_WRITE_DATA;
 
@@ -83,7 +83,7 @@ DENSITY_FORCE_INLINE void density_block_encode_update_totals(density_memory_loca
     state->totalWritten += availableOutBefore - out->available_bytes;
 }
 
-DENSITY_FORCE_INLINE DENSITY_BLOCK_ENCODE_STATE density_block_encode_init(density_block_encode_state *restrict state, const DENSITY_BLOCK_MODE mode, const DENSITY_BLOCK_TYPE blockType, void *kernelState, DENSITY_KERNEL_ENCODE_STATE (*kernelInit)(void *), DENSITY_KERNEL_ENCODE_STATE (*kernelProcess)(density_memory_location*, density_memory_location*, void *, const density_bool), DENSITY_KERNEL_ENCODE_STATE (*kernelFinish)(void *)) {
+DENSITY_FORCE_INLINE DENSITY_BLOCK_ENCODE_STATE density_block_encode_init(density_block_encode_state *restrict state, const DENSITY_COMPRESSION_MODE mode, const DENSITY_BLOCK_TYPE blockType, void *kernelState, DENSITY_KERNEL_ENCODE_STATE (*kernelInit)(void *), DENSITY_KERNEL_ENCODE_STATE (*kernelProcess)(density_memory_location*, density_memory_location*, void *, const density_bool), DENSITY_KERNEL_ENCODE_STATE (*kernelFinish)(void *)) {
     state->process = DENSITY_BLOCK_ENCODE_PROCESS_WRITE_BLOCK_HEADER;
     state->blockType = blockType;
     state->targetMode = mode;

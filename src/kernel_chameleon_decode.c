@@ -158,8 +158,7 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_init(d
 DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_process(density_memory_location *restrict in, density_memory_location *restrict out, density_chameleon_decode_state *restrict state, const density_bool flush) {
     DENSITY_KERNEL_DECODE_STATE returnState;
     density_memory_location *readMemoryLocation;
-    uint_fast32_t bodyLength;
-
+    
     switch (state->process) {
         case DENSITY_CHAMELEON_DECODE_PROCESS_PREPARE_NEW_BLOCK:
         prepare_new_block:
@@ -177,16 +176,15 @@ DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE density_chameleon_decode_proces
             density_chameleon_decode_read_signature(readMemoryLocation, state);
             if(readMemoryLocation->available_bytes)
                 readMemoryLocation->available_bytes -= sizeof(density_chameleon_signature);
+            state->bodyLength = (uint_fast32_t) (sizeof(uint32_t) * bitsizeof(density_chameleon_signature) - __builtin_popcountll(state->signature) * (sizeof(uint32_t) - sizeof(uint16_t)));
             state->process = DENSITY_CHAMELEON_DECODE_PROCESS_DECOMPRESS_BODY;
             
         case DENSITY_CHAMELEON_DECODE_PROCESS_DECOMPRESS_BODY:
-            bodyLength = (uint_fast32_t) (__builtin_popcountll(state->signature) * (sizeof(uint16_t) - sizeof(uint32_t)) + sizeof(density_chameleon_signature) + sizeof(uint32_t) * bitsizeof(density_chameleon_signature));
-            //density_warp_pointer_resizable_reset(state->warpPointerBody, bodyLength);
-            if (!(readMemoryLocation = density_warper_fetch_from_sub_span(state->warperBody, in, bodyLength)))
+            if (!(readMemoryLocation = density_warper_fetch_from_sub_span(state->warperBody, in, state->bodyLength)))
                 return DENSITY_KERNEL_DECODE_STATE_STALL_ON_INPUT_BUFFER;
             density_chameleon_decode_process_data(readMemoryLocation, out, state);
             if(readMemoryLocation->available_bytes)
-                readMemoryLocation->available_bytes -= bodyLength;
+                readMemoryLocation->available_bytes -= state->bodyLength;
             out->available_bytes -= bitsizeof(density_chameleon_signature) * sizeof(uint32_t);
             state->process = DENSITY_CHAMELEON_DECODE_PROCESS_PREPARE_NEW_BLOCK;
             goto prepare_new_block;
