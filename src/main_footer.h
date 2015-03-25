@@ -39,6 +39,7 @@
 #include "memory_teleport.h"
 
 typedef struct {
+  short _dummy;
 } density_main_footer;
 
 uint_fast32_t density_main_footer_read(density_memory_location *, density_main_footer *);

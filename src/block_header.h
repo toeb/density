@@ -44,6 +44,7 @@
 #pragma pack(push)
 #pragma pack(4)
 typedef struct {
+  short _dummy;
 } density_block_header;
 #pragma pack(pop)
 

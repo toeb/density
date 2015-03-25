@@ -35,12 +35,13 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include <stddef.h>
 
 #if defined(__INTEL_COMPILER)
 #define DENSITY_FORCE_INLINE __forceinline
 #elif defined(_MSC_VER)
+#define restrict
 #define DENSITY_FORCE_INLINE __forceinline
 #elif defined(__GNUC__)
 #define DENSITY_FORCE_INLINE inline __attribute__((always_inline))
