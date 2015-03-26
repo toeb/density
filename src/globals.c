@@ -42,3 +42,4 @@ uint8_t density_version_minor() {
 uint8_t density_version_revision() {
     return DENSITY_REVISION;
 }
+

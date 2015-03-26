@@ -42,7 +42,7 @@
 
 #include "kernel_cheetah_decode.h"
 
-DENSITY_FORCE_INLINE DENSITY_KERNEL_DECODE_STATE exitProcess(density_cheetah_decode_state *state, DENSITY_CHEETAH_DECODE_PROCESS process, DENSITY_KERNEL_DECODE_STATE kernelDecodeState) {
+DENSITY_REQUIRED_INLINE DENSITY_KERNEL_DECODE_STATE exitProcess(density_cheetah_decode_state *state, DENSITY_CHEETAH_DECODE_PROCESS process, DENSITY_KERNEL_DECODE_STATE kernelDecodeState) {
     state->process = process;
     return kernelDecodeState;
 }

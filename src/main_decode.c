@@ -31,7 +31,7 @@
 
 #include "main_decode.h"
 
-DENSITY_FORCE_INLINE DENSITY_DECODE_STATE exitProcess(density_decode_state *state, DENSITY_DECODE_PROCESS process, DENSITY_DECODE_STATE decodeState) {
+DENSITY_REQUIRED_INLINE DENSITY_DECODE_STATE exitProcess(density_decode_state *state, DENSITY_DECODE_PROCESS process, DENSITY_DECODE_STATE decodeState) {
     state->process = process;
     return decodeState;
 }

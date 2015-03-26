@@ -1,13 +1,11 @@
 cmake_minimum_required(VERSION 2.8.12)
 
 ## TODOs
-## * add cmakepp in a more reliable fashion (ie don't just depend on its existance)
 ## * add compiler flags
-## * add cmakepp package file
 
 
 ## include cmakepp
-include("$ENV{CMAKEPP_PATH}")
+include("cmake/cmakepp.cmake")
 
 ## set project language to C
 project(density C)
@@ -45,6 +43,34 @@ endif()
 add_library(density ${density_src})
 target_include_directories(density PUBLIC ${density_src_directory})
 target_link_libraries(density spookyhash)
+
+
+## add test for density
+
+enable_testing()
+
+glob(tests/*.c)
+ans(test_files)
+  
+## loops through every c file in the tests directory and creates a test 
+## for it (naive but effective way of performing tests)
+## you can type ctest in your binary dir and it will run all tests.
+foreach(test_file ${test_files})
+  path_file_name("${test_file}" -we) # get name of file without extension
+  ans(test_name)
+  ## create executable target
+  add_executable("${test_name}" "${test_file}")
+  ## link to density lib
+  target_link_libraries("${test_name}" "density")
+  ## add density include dir and tests dir as include directories
+  target_include_directories("${test_name}" PUBLIC "${density_src_directory}" )
+  target_include_directories("${test_name}" PUBLIC "${tests}" )
+  ## create test (name of test+ name of target to execute)
+  add_test("${test_name}" "${test_name}")
+endforeach()
+
+
+
 
 
 

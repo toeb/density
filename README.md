@@ -211,3 +211,21 @@ When this is done you can start using the **DENSITY APIs** :
 And that's it ! We've done two compression/decompression round trips with a few lines !
 
 If you want a more elaborate example you can checkout [the SHARC project](https://github.com/centaurean/sharc).
+
+
+## `CMake` build
+
+**this is experimental**
+
+to build the project with cmake you need to:
+* create and cd into a `build` directory inside  project root
+* `cmake ..` 
+* `cmake --build .` or open the generated project files with your IDE
+* `ctest .` run all tests defined inside `tests/`
+
+
+* Current Problems:
+  - `MSVC` does not support usage of __forceinline, __builtin*  in the way that they are used
+  - `MSVC` does not initialize struct members to 0 automatically.  I believe this causes an error.  At least there is an error when trying to free the memory after decompressing (teleport...)
+  - in `spookyhash` you have to remove the `__force_inline` as well as it is causing the same errors. I did this locally as I did not wish to create a new git submodule dependency to an altered version of `spookyhash`
+

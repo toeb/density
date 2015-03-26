@@ -41,8 +41,9 @@
 #if defined(__INTEL_COMPILER)
 #define DENSITY_FORCE_INLINE __forceinline
 #elif defined(_MSC_VER)
-#define restrict
-#define DENSITY_FORCE_INLINE __forceinline
+#define restrict   // remove because not supported by msvc
+#define DENSITY_FORCE_INLINE //__forceinline remove because unlinkable with msvc
+#define DENSITY_REQUIRED_INLINE __forceinline // add this for functions which really are required to be inline
 #elif defined(__GNUC__)
 #define DENSITY_FORCE_INLINE inline __attribute__((always_inline))
 #elif defined(__clang__)
@@ -73,9 +74,19 @@
 #define DENSITY_DICTIONARY_PREFERRED_RESET_CYCLE_SHIFT    6
 #define DENSITY_DICTIONARY_PREFERRED_RESET_CYCLE          (1 << DENSITY_DICTIONARY_PREFERRED_RESET_CYCLE_SHIFT)
 
+#ifndef _MSC_VER
 #define density_likely(x)                         __builtin_expect(!!(x), 1)
 #define density_unlikely(x)                       __builtin_expect(!!(x), 0)
+#define density_prefetch_hint(...)  __builtin_prefetch(__VA_ARGS__)
 
+#else
+// there is an __assume intrinsic in MSVC however it is recommended not to use likely and unlikely
+#define density_likely(x) !!(x)  
+#define density_unlikely(x) !!(x)
+// __bultin_prefetch is not supported on MSVC
+#define density_prefetch_hint(...) 
+
+#endif
 #define density_bitsizeof(x) (8 * sizeof(x))
 
 

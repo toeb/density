@@ -31,7 +31,7 @@
 
 #include "block_decode.h"
 
-DENSITY_FORCE_INLINE DENSITY_BLOCK_DECODE_STATE exitProcess(density_block_decode_state *state, DENSITY_BLOCK_DECODE_PROCESS process, DENSITY_BLOCK_DECODE_STATE blockDecodeState) {
+DENSITY_REQUIRED_INLINE DENSITY_BLOCK_DECODE_STATE exitProcess(density_block_decode_state *state, DENSITY_BLOCK_DECODE_PROCESS process, DENSITY_BLOCK_DECODE_STATE blockDecodeState) {
     state->process = process;
     return blockDecodeState;
 }

@@ -41,7 +41,7 @@
 
 #include "kernel_lion_encode.h"
 
-DENSITY_FORCE_INLINE DENSITY_KERNEL_ENCODE_STATE exitProcess(density_lion_encode_state *state, DENSITY_LION_ENCODE_PROCESS process, DENSITY_KERNEL_ENCODE_STATE kernelEncodeState) {
+DENSITY_REQUIRED_INLINE DENSITY_KERNEL_ENCODE_STATE exitProcess(density_lion_encode_state *state, DENSITY_LION_ENCODE_PROCESS process, DENSITY_KERNEL_ENCODE_STATE kernelEncodeState) {
     state->process = process;
     return kernelEncodeState;
 }
@@ -150,7 +150,7 @@ DENSITY_FORCE_INLINE void density_lion_encode_manage_bigram(density_memory_locat
 DENSITY_FORCE_INLINE void density_lion_encode_kernel(density_memory_location *restrict out, uint32_t *restrict hash, const uint32_t chunk, density_lion_encode_state *restrict state) {
     DENSITY_LION_HASH_ALGORITHM(*hash, DENSITY_LITTLE_ENDIAN_32(chunk));
     density_lion_dictionary_chunk_prediction_entry *p = &(state->dictionary.predictions[state->lastHash]);
-    __builtin_prefetch(&(state->dictionary.predictions[*hash]), 1, 3);
+    density_prefetch_hint(&(state->dictionary.predictions[*hash]), 1, 3);
 
     if (*(uint32_t *) p ^ chunk) {
         if (!density_likely(*((uint32_t *) p + 1) ^ chunk)) {
@@ -204,7 +204,7 @@ DENSITY_FORCE_INLINE void density_lion_encode_kernel(density_memory_location *re
 
 DENSITY_FORCE_INLINE void density_lion_encode_process_chunk(uint64_t *restrict chunk, density_memory_location *restrict in, density_memory_location *restrict out, uint32_t *restrict hash, density_lion_encode_state *restrict state) {
     *chunk = *(uint64_t *) (in->pointer);
-    __builtin_prefetch((uint64_t *) (in->pointer) + 1, 0, 3);
+    density_prefetch_hint((uint64_t *)(in->pointer) + 1, 0, 3);
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     density_lion_encode_kernel(out, hash, (uint32_t) (*chunk & 0xFFFFFFFF), state);
